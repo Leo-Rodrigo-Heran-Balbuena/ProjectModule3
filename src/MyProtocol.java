@@ -160,14 +160,19 @@ public class MyProtocol {
                     Message m = receivedQueue.take();
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
                         System.out.println("BUSY");
+                        // if channel is busy then we do not try to send at the time
                     } else if (m.getType() == MessageType.FREE) { // The channel is no longer busy (no nodes are sending within our detection range)
                         System.out.println("FREE");
+                        // if there is stuff to send then we can send now
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
                         System.out.print("DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
+                        // look at the header and if fragmented, rebuild packet and print, if not print data
+
                     } else if (m.getType() == MessageType.DATA_SHORT) { // We received a short data frame!
                         System.out.print("DATA_SHORT: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
+                        // incoming data for data short will mostly be acks
                     } else if (m.getType() == MessageType.DONE_SENDING) { // This node is done sending
                         System.out.println("DONE_SENDING");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
