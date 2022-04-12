@@ -47,7 +47,7 @@ public class MyProtocol {
         for (int i = 0; i < (array1.length + array2.length); i++) {
             if (i < array1.length) {
                 result[i] = array1[i];
-            } else {
+            } else {                            //
                 result[i] = array2[i];
             }
         }
