@@ -24,6 +24,8 @@ public class MyProtocol {
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
 
+    private final int ID = 1;
+
 
     public byte[] createHeader(int senderID, int receiverID, int numberOfMessage,
                                int messageID, int moreFragments, int seq, int ack, int bitSkip, int fragmentFlag) {
