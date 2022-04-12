@@ -2,6 +2,7 @@ import client.*;
 
 import java.nio.ByteBuffer;
 import java.io.Console;
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -23,6 +24,37 @@ public class MyProtocol {
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
 
+
+    public byte[] createHeader(int senderID, int receiverID, int numberOfMessage,
+                               int messageID, int moreFragments, int seq, int ack, int bitSkip, int fragmentFlag) {
+
+        byte[] header = new byte[8];
+
+        header[0] = (byte) ((senderID * 16) + receiverID); // first byte, first 4 digits senderID second 4 is receiverID
+        header[1] = (byte) (numberOfMessage);
+        header[2] = (byte) (messageID);
+        header[3] = (byte) moreFragments;
+        header[4] = (byte) (seq);
+        header[5] = (byte) (ack);
+        header[6] = (byte) (bitSkip);
+        header[7] = (byte) (fragmentFlag);
+        return header;
+
+    }
+
+    public byte[] mergeArrays(byte[] array1, byte[] array2) {
+        byte[] result = new byte[array1.length + array2.length];
+        for (int i = 0; i < (array1.length + array2.length); i++) {
+            if (i < array1.length) {
+                result[i] = array1[i];
+            } else {
+                result[i] = array2[i];
+            }
+        }
+        return result;
+    }
+
+
     public MyProtocol(String server_ip, int server_port, int frequency) {
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
@@ -39,30 +71,55 @@ public class MyProtocol {
             while (true) {
                 input = console.readLine(); // read input
                 byte[] inputBytes = input.getBytes(); // get bytes from input
-                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
-                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.
+//                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
+//                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.
                 Message msg;
                 if ((inputBytes.length) > 2) {
-                    if (inputBytes.length < 32) {
+
+                    ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
+
+                    if (inputBytes.length < 24) {
                         //padding
-                    }
-                    if (inputBytes.length == 32) {
-                        //send directly once
-                    }
-                    if (inputBytes.length > 32) {
-                        int totalPackets = inputBytes.length / 32 + 1; // total packet we need to send
-                        int remainBytes = inputBytes.length % 32; // the Bytes that needs to be sent in the last packet
-                        for (int i = 0; i < totalPackets - 1; i++) {
-                            //TODO: set header
-                            msg = new Message(MessageType.DATA, toSend);
-                            sendingQueue.put(msg); //send with header
-                        }
+                        int necessaryPadding = 24 - inputBytes.length;
+                        byte[] zeros = new byte[necessaryPadding];
+                        byte[] result = mergeArrays(zeros, inputBytes);
+                        byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        toSend.put(mergeArrays(header, result), 8, 32);
                         msg = new Message(MessageType.DATA, toSend);
                         sendingQueue.put(msg);
-                        //TODO: send remainBytes with header and padding
+                    }
+
+                    if (inputBytes.length == 24) {   // send directly once
+                        byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
+                        toSend.put(mergeArrays(header, inputBytes), 8, 32);
+                        msg = new Message(MessageType.DATA, toSend); //Create message
+                        sendingQueue.put(msg); //send with header
+
+                    }
+
+                    if (inputBytes.length > 24) {
+                        int totalPackets = inputBytes.length / 24; // total packet we need to send
+                        int remainBytes = inputBytes.length % 24; // the Bytes that needs to be sent in the last packet
+                        byte[] temp;
+                        for (int i = 0; i < totalPackets; i++) {
+
+                            if (totalPackets - i == 1 && remainBytes != 0) {
+                                temp = Arrays.copyOfRange(inputBytes, i * 24, inputBytes.length);
+                                // set more fragments flag to zero && set flag indicating fragment to 1
+                            } else {
+                                temp = Arrays.copyOfRange(inputBytes, i * 24, (i + 1) * 24);
+                                // set more fragments flag to 1 and indicate position for re_fragmentation
+                            }
+                            byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
+                            toSend.put(mergeArrays(header, inputBytes), 8, 32);
+                            msg = new Message(MessageType.DATA, toSend);
+                            sendingQueue.put(msg);
+                        }
                     }
                     //msg = new Message(MessageType.DATA, toSend);
                 } else {
+                    ByteBuffer toSend = ByteBuffer.allocate(2); // match the form of DATA-SHORT
+                    //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
                 }
                 //sendingQueue.put(msg);
@@ -126,4 +183,3 @@ public class MyProtocol {
         }
     }
 }
-
