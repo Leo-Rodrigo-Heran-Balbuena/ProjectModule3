@@ -33,20 +33,20 @@ public class MyProtocol {
         byte[] header = new byte[8];
 
         header[0] = (byte) ((senderID * 16) + receiverID); // first byte, first 4 digits senderID second 4 is receiverID
-        header[1] = (byte) (numberOfMessage);
-        header[2] = (byte) (messageID);
-        header[3] = (byte) moreFragments;
-        header[4] = (byte) (seq);
-        header[5] = (byte) (ack);
-        header[6] = (byte) (bitSkip);
-        header[7] = (byte) (fragmentFlag);
+        header[1] = (byte) (numberOfMessage); // used when reassembling packets, i.e. the order of the packets
+        header[2] = (byte) (messageID); // will probably be used for all packets somehow
+        header[3] = (byte) moreFragments; // will be set to 1 if there are more fragments coming, 0 if not
+        header[4] = (byte) (seq); // sequence number of packet, may be used for reliable transmission and such
+        header[5] = (byte) (ack); // ack number of packet, may be used for reliable transmission and such
+        header[6] = (byte) (bitSkip); //bit that needs to be skipped, used for the last message lower than 24 bytes
+        header[7] = (byte) (fragmentFlag); //will be set to 1 if the packet was a part of a fragmentation
         return header;
 
     }
 
     public byte[] mergeArrays(byte[] array1, byte[] array2) {
         byte[] result = new byte[array1.length + array2.length];
-        for (int i = 0; i < (array1.length + array2.length); i++) {
+        for (int i = 0; i < (array1.length + array2.length); i++) { // might need reduce iterations by 2
             if (i < array1.length) {
                 result[i] = array1[i];
             } else {                            //
@@ -70,7 +70,7 @@ public class MyProtocol {
             Console console = System.console();
             String input = "";
 
-            while (true) {
+            while (console.readLine() != null) {
                 input = console.readLine(); // read input
                 byte[] inputBytes = input.getBytes(); // get bytes from input
 //                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
@@ -85,8 +85,10 @@ public class MyProtocol {
                         int necessaryPadding = 24 - inputBytes.length;
                         byte[] zeros = new byte[necessaryPadding];
                         byte[] result = mergeArrays(zeros, inputBytes);
-                        byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                        toSend.put(mergeArrays(header, result), 8, 32);
+                        byte[] header = createHeader(0, 0, 0,
+                                0, 0, 0, 0, 0, 0);
+
+                        toSend.put(mergeArrays(header, result),0, 32);
                         msg = new Message(MessageType.DATA, toSend);
                         sendingQueue.put(msg);
                     }
@@ -113,7 +115,7 @@ public class MyProtocol {
                                 // set more fragments flag to 1 and indicate position for re_fragmentation
                             }
                             byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                            toSend.put(mergeArrays(header, inputBytes), 8, 32);
+                            toSend.put(mergeArrays(header, inputBytes), 0, 32);
                             msg = new Message(MessageType.DATA, toSend);
                             sendingQueue.put(msg);
                         }
@@ -158,6 +160,9 @@ public class MyProtocol {
             while (true) {
                 try {
                     Message m = receivedQueue.take();
+
+                    // look at header
+
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
                         System.out.println("BUSY");
                         // if channel is busy then we do not try to send at the time
