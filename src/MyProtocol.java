@@ -95,7 +95,7 @@ public class MyProtocol {
 
                     if (inputBytes.length == 24) {   // send directly once
                         byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                        toSend.put(mergeArrays(header, inputBytes), 8, 32);
+                        toSend.put(mergeArrays(header, inputBytes), 0, 32);
                         msg = new Message(MessageType.DATA, toSend); //Create message
                         sendingQueue.put(msg); //send with header
 
