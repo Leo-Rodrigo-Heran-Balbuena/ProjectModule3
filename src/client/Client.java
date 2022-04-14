@@ -4,12 +4,16 @@ import java.nio.channels.SocketChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 
 
 public class Client {
     
     private SocketChannel sock;
+
+    private boolean clogged;                                    // Checks if busy
+    private int timer = 0;
 
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
@@ -22,7 +26,8 @@ public class Client {
         System.out.println();
     }
 
-    public Client(String server_ip, int server_port, int frequency, BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue){
+    public Client(String server_ip, int server_port, int frequency,
+                  BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue){
         this.receivedQueue = receivedQueue;
         this.sendingQueue = sendingQueue;
         SocketChannel sock;
@@ -56,26 +61,30 @@ public class Client {
 
         private void senderLoop(){
             while(sock.isConnected()){
+                Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    if( msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ){
-                        ByteBuffer data = msg.getData();
-                        data.position(0); //reset position just to be sure
-                        int length = data.capacity(); //assume capacity is also what we want to send here!
-                        ByteBuffer toSend = ByteBuffer.allocate(length+2);
-                        if( msg.getType() == MessageType.DATA ){
-                            toSend.put((byte) 3);
-                        } else { // must be DATA_SHORT due to check above
-                            toSend.put((byte) 6);
-                        }                        
-                        toSend.put((byte) length);
-                        toSend.put(data);
-                        toSend.position(0);
-                        // System.out.println("Sending "+Integer.toString(length)+" bytes!");
-                        sock.write(toSend);
-                    }                    
-                } catch(IOException e) {
-                    System.err.println("Alles is stuk!" );
+                    Message state = receivedQueue.take();
+
+                    if (state.getType() == MessageType.BUSY) {
+                        System.out.println("Busy. Await for new slot");
+                        clogged = true;
+                        timer = rand.nextInt(200);
+                        while (!clogged) {
+                            timer = timer -1;
+                            if (timer == 0) {
+                                clogged = false;
+                                attemptToSendData(msg);
+                                break;
+                            }
+                        }
+                    } else {
+                        int toSendChance = rand.nextInt(1000);
+                        if (toSendChance < 800) {
+                            attemptToSendData(msg);
+                        };
+                    }
+
                 } catch(InterruptedException e){
                     System.err.println("Failed to take from sendingQueue: "+e);
                 }                
@@ -100,8 +109,31 @@ public class Client {
             senderLoop();
         }
 
-    }
+        private void attemptToSendData(Message msg) {
+            try {
+                if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ){
+                    ByteBuffer data = msg.getData();
+                    data.position(0); //reset position just to be sure
+                    int length = data.capacity(); //assume capacity is also what we want to send here!
+                    ByteBuffer toSend = ByteBuffer.allocate(length+2);
+                    if( msg.getType() == MessageType.DATA ){
+                        toSend.put((byte) 3);
+                    } else { // must be DATA_SHORT due to check above
+                        toSend.put((byte) 6);
+                    }
+                    toSend.put((byte) length);
+                    toSend.put(data);
+                    toSend.position(0);
+                    // System.out.println("Sending "+Integer.toString(length)+" bytes!");
+                    sock.write(toSend);
+                }
+            } catch(IOException e) {
+                System.err.println("Alles is stuk!" );
+            }
 
+        }
+
+    }
 
     private class Listener extends Thread {
         private BlockingQueue<Message> receivedQueue;
@@ -126,20 +158,22 @@ public class Client {
                     byte d = received.get(offset);
         
                     if( messageReceiving ){
-                        if (messageLength == -1) {
+                        if ( messageLength == -1) {
                             messageLength = (int) d;
                             messageBuffer = ByteBuffer.allocate(messageLength);
                         } else {
                             messageBuffer.put( d );
                         }
                         if( messageBuffer.position() == messageLength ){
-                            // Return DATA here
-                            // printByteBuffer(messageBuffer, messageLength);
-                            // System.out.println("pos: "+Integer.toString(messageBuffer.position()) );
+
+                            printByteBuffer(messageBuffer, messageLength);
+                            System.out.println("pos: "+Integer.toString(messageBuffer.position()) );
                             messageBuffer.position(0);
+
                             ByteBuffer temp = ByteBuffer.allocate(messageLength);
                             temp.put(messageBuffer);
                             temp.rewind();
+
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
@@ -155,7 +189,7 @@ public class Client {
                             // System.out.println("FREE");
                             receivedQueue.put( new Message(MessageType.FREE) );
                         } else if ( d == 0x02 ){ // BUSY
-                            // System.out.println("BUSY");
+                            System.out.println("BUSY");
                             receivedQueue.put( new Message(MessageType.BUSY) );
                         } else if ( d == 0x03 ){ // DATA!
                             messageLength = -1;
@@ -198,7 +232,7 @@ public class Client {
                 while( sock.isConnected() ){
                     bytesRead = sock.read(recv);
                     if ( bytesRead > 0 ){
-                        // System.out.println("Received "+Integer.toString(bytesRead)+" bytes!");
+                        System.out.println("Received "+Integer.toString(bytesRead)+" bytes!");
                         parseMessage( recv, bytesRead );
                     } else {
                         break;
