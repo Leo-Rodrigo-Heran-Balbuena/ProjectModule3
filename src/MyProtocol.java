@@ -100,7 +100,7 @@ public class MyProtocol {
                         byte[] zeros = new byte[necessaryPadding];
                         byte[] result = mergeArrays(zeros, inputBytes);
                         byte[] header = createHeader(0, 0, 0,
-                                0, 0, 0, 0, 0, 0);
+                                0, 0, 0, 0, necessaryPadding, 0);
 
                         toSend.put(mergeArrays(header, result),0, 32);
                         msg = new Message(MessageType.DATA, toSend);
@@ -177,11 +177,11 @@ public class MyProtocol {
         // Handle messages from the server / audio framework
         public void run() {
             while (true) {
+
                 try {
+
                     Message m = receivedQueue.take();
-
                     // look at header
-
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
                         System.out.println("BUSY");
                         // if channel is busy then we do not try to send at the time
@@ -191,6 +191,19 @@ public class MyProtocol {
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
                         System.out.print("DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
+
+                        // index 6
+                        ByteBuffer temp = m.getData();
+                        int padding = (int) temp.get(6); // create methods for parsing
+
+                        if (padding > 0) {
+                            byte[] data = new byte[24 - padding];
+                            for (int i = 0; i < data.length; i++) {
+
+                            }
+                        }
+
+
                         String string = "";
                         if (m.getData().hasArray()) {
                             string = new String(m.getData().array(), StandardCharsets.UTF_8)
