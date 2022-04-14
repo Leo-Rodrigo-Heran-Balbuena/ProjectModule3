@@ -49,13 +49,19 @@ public class MyProtocol {
 
     }
 
+
+    // out of bounds
+
     public byte[] mergeArrays(byte[] array1, byte[] array2) {
+        int counter1 = 0, counter2 = 0;
         byte[] result = new byte[array1.length + array2.length];
-        for (int i = 0; i < (array1.length + array2.length); i++) { // might need reduce iterations by 2
+        for (int i = 0; i < (array1.length + array2.length - 1); i++) { // might need reduce iterations by 2
             if (i < array1.length) {
-                result[i] = array1[i];
+                result[i] = array1[counter1];
+                counter1++;
             } else {                            //
-                result[i] = array2[i];
+                result[i] = array2[counter2];
+                counter2++;
             }
         }
         return result;
@@ -77,16 +83,18 @@ public class MyProtocol {
 
             String input = "";
             while ((input = console.readLine()) != null) {
-
+                System.out.println("This is inputted " + input);
                 byte[] inputBytes = input.getBytes(); // get bytes from input
 //                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
 //                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.
+                System.out.println(inputBytes);
                 Message msg;
                 if ((inputBytes.length) > 2) {
 
                     ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
 
                     if (inputBytes.length < 24) {
+                        System.out.println("Check point 1A reached");
                         //padding
                         int necessaryPadding = 24 - inputBytes.length;
                         byte[] zeros = new byte[necessaryPadding];
@@ -97,40 +105,42 @@ public class MyProtocol {
                         toSend.put(mergeArrays(header, result),0, 32);
                         msg = new Message(MessageType.DATA, toSend);
                         sendingQueue.put(msg);
-                    }
-
-                    if (inputBytes.length == 24) {   // send directly once
+                        System.out.println("Check point 1B reached");
+                    } else if (inputBytes.length == 24) {   // send directly once
                         byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
                         toSend.put(mergeArrays(header, inputBytes), 0, 32);
                         msg = new Message(MessageType.DATA, toSend); //Create message
                         sendingQueue.put(msg); //send with header
 
-                    }
-
-                    if (inputBytes.length > 24) {
+                    } else {
                         int totalPackets = inputBytes.length / 24; // total packet we need to send
                         int remainBytes = inputBytes.length % 24; // the Bytes that needs to be sent in the last packet
                         byte[] temp;
                         for (int i = 0; i < totalPackets; i++) {
-
+                            System.out.println("Checkpoint 2A");
                             if (totalPackets - i == 1 && remainBytes != 0) {
                                 temp = Arrays.copyOfRange(inputBytes, i * 24, inputBytes.length);
                                 // set more fragments flag to zero && set flag indicating fragment to 1
                             } else {
                                 temp = Arrays.copyOfRange(inputBytes, i * 24, (i + 1) * 24);
                                 // set more fragments flag to 1 and indicate position for re_fragmentation
+                                System.out.println("Checkpoint 2B");
                             }
                             byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
                             toSend.put(mergeArrays(header, inputBytes), 0, 32);
                             msg = new Message(MessageType.DATA, toSend);
                             sendingQueue.put(msg);
+                            System.out.println(sendingQueue.take());
                         }
                     }
                     //msg = new Message(MessageType.DATA, toSend);
                 } else {
+                    System.out.println("Checkpoint 3A");
                     ByteBuffer toSend = ByteBuffer.allocate(2); // match the form of DATA-SHORT
                     //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
+                    sendingQueue.put(msg);
+                    System.out.println(sendingQueue.take() + "Checkpoint 3B");
                 }
                 //sendingQueue.put(msg);
             }
