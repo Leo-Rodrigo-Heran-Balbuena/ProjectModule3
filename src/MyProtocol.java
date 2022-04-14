@@ -3,9 +3,7 @@ import client.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.io.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
@@ -55,7 +53,7 @@ public class MyProtocol {
     public byte[] mergeArrays(byte[] array1, byte[] array2) {
         int counter1 = 0, counter2 = 0;
         byte[] result = new byte[array1.length + array2.length];
-        for (int i = 0; i < (array1.length + array2.length - 1); i++) { // might need reduce iterations by 2
+        for (int i = 0; i < (array1.length + array2.length); i++) { // might need reduce iterations by 2
             if (i < array1.length) {
                 result[i] = array1[counter1];
                 counter1++;
@@ -93,7 +91,7 @@ public class MyProtocol {
 
                     ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
 
-                    if (inputBytes.length < 24) {
+                    if (inputBytes.length <= 24) {
                         System.out.println("Check point 1A reached");
                         //padding
                         int necessaryPadding = 24 - inputBytes.length;
@@ -105,13 +103,6 @@ public class MyProtocol {
                         toSend.put(mergeArrays(header, result),0, 32);
                         msg = new Message(MessageType.DATA, toSend);
                         sendingQueue.put(msg);
-                        System.out.println("Check point 1B reached");
-                    } else if (inputBytes.length == 24) {   // send directly once
-                        byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                        toSend.put(mergeArrays(header, inputBytes), 0, 32);
-                        msg = new Message(MessageType.DATA, toSend); //Create message
-                        sendingQueue.put(msg); //send with header
-
                     } else {
                         int totalPackets = inputBytes.length / 24; // total packet we need to send
                         int remainBytes = inputBytes.length % 24; // the Bytes that needs to be sent in the last packet
@@ -183,13 +174,13 @@ public class MyProtocol {
                     Message m = receivedQueue.take();
                     // look at header
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
-                        System.out.println("BUSY");
+                        System.out.println("[CONSOLE] - BUSY");
                         // if channel is busy then we do not try to send at the time
                     } else if (m.getType() == MessageType.FREE) { // The channel is no longer busy (no nodes are sending within our detection range)
-                        System.out.println("FREE");
+                        System.out.println("[CONSOLE] - FREE");
                         // if there is stuff to send then we can send now
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
-                        System.out.print("DATA: ");
+                        System.out.print("[CONSOLE] - DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
 
                         // index 6
@@ -206,24 +197,24 @@ public class MyProtocol {
 
                         String string = "";
                         if (m.getData().hasArray()) {
-                            string = new String(m.getData().array(), StandardCharsets.UTF_8)
+                            string = new String(m.getData().array(), StandardCharsets.UTF_8);
                         }
                         System.out.println(string);
 
                         // look at the header and if fragmented, rebuild packet and print, if not print data
 
                     } else if (m.getType() == MessageType.DATA_SHORT) { // We received a short data frame!
-                        System.out.print("DATA_SHORT: ");
+                        System.out.print("[CONSOLE] - DATA SHORT: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         // incoming data for data short will mostly be acks
                     } else if (m.getType() == MessageType.DONE_SENDING) { // This node is done sending
                         System.out.println("x");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
-                        System.out.println("HELLO");
+                        System.out.println("[CONSOLE] - HELLO");
                     } else if (m.getType() == MessageType.SENDING) { // This node is sending
-                        System.out.println("SENDING");
+                        System.out.println("[CONSOLE] - SENDING");
                     } else if (m.getType() == MessageType.END) { // Server / audio framework disconnect message. You don't have to handle this
-                        System.out.println("END");
+                        System.out.println("[CONSOLE] - END");
                         System.exit(0);
                     }
                 } catch (InterruptedException e) {
