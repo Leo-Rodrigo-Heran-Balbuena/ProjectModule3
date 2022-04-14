@@ -70,8 +70,7 @@ public class MyProtocol {
             Console console = System.console();
             String input = "";
 
-            while (console.readLine() != null) {
-                input = console.readLine(); // read input
+            while (console != null && (input = console.readLine()) != null) {
                 byte[] inputBytes = input.getBytes(); // get bytes from input
 //                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
 //                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.

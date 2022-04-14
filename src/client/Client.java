@@ -13,7 +13,6 @@ public class Client {
     private SocketChannel sock;
 
     private boolean clogged;                        // Checks if busy
-    private int[] slots = {0,10,20,30};             // Aloha slots
     private int timer = 0;
 
     private BlockingQueue<Message> receivedQueue;
@@ -61,18 +60,24 @@ public class Client {
 
         private void senderLoop(){
             while(sock.isConnected()){
+                Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
                     Message state = receivedQueue.take();
 
                     if (state.getType() == MessageType.BUSY) {
                         System.out.println("Busy. Await for new slot");
-                        while (timer % 10 != 0) {
-                            timer++;
+                        clogged = true;
+                        timer = rand.nextInt(200);
+                        while (!clogged) {
+                            timer = timer -1;
+                            if (timer == 0) {
+                                clogged = false;
+                                attemptToSendData(msg);
+                                break;
+                            }
                         }
-                        attemptToSendData(msg);
                     } else {
-                        Random rand = new Random();
                         int toSendChance = rand.nextInt(1000);
                         if (toSendChance < 800) {
                             attemptToSendData(msg);
@@ -152,20 +157,22 @@ public class Client {
                     byte d = received.get(offset);
         
                     if( messageReceiving ){
-                        if (messageLength == -1) {
+                        if ( messageLength == -1) {
                             messageLength = (int) d;
                             messageBuffer = ByteBuffer.allocate(messageLength);
                         } else {
                             messageBuffer.put( d );
                         }
                         if( messageBuffer.position() == messageLength ){
-                            // Return DATA here
-                            // printByteBuffer(messageBuffer, messageLength);
-                            // System.out.println("pos: "+Integer.toString(messageBuffer.position()) );
+
+                            printByteBuffer(messageBuffer, messageLength);
+                            System.out.println("pos: "+Integer.toString(messageBuffer.position()) );
                             messageBuffer.position(0);
+
                             ByteBuffer temp = ByteBuffer.allocate(messageLength);
                             temp.put(messageBuffer);
                             temp.rewind();
+
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
@@ -224,7 +231,7 @@ public class Client {
                 while( sock.isConnected() ){
                     bytesRead = sock.read(recv);
                     if ( bytesRead > 0 ){
-                        // System.out.println("Received "+Integer.toString(bytesRead)+" bytes!");
+                        System.out.println("Received "+Integer.toString(bytesRead)+" bytes!");
                         parseMessage( recv, bytesRead );
                     } else {
                         break;
