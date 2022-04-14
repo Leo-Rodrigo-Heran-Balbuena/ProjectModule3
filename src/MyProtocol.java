@@ -92,8 +92,9 @@ public class MyProtocol {
                     ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
 
                     if (inputBytes.length <= 24) {
-                        System.out.println("Check point 1A reached");
-                        //padding
+
+
+
                         int necessaryPadding = 24 - inputBytes.length;
                         byte[] zeros = new byte[necessaryPadding];
                         byte[] result = mergeArrays(zeros, inputBytes);
@@ -142,6 +143,21 @@ public class MyProtocol {
             e.printStackTrace();
         }
     }
+
+/*
+    private Message generateMessage(byte[] inputBytes){
+        if () {
+
+        }
+
+        return null;
+    }
+    private void generateFragmentedMessage(){
+
+    }
+
+    private void ()
+*/
 
     public static void main(String args[]) {
         if (args.length > 0) {
