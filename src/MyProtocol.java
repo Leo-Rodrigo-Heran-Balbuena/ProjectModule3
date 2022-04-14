@@ -182,28 +182,28 @@ public class MyProtocol {
                     // look at header
 
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
-                        System.out.println("BUSY");
+                        System.out.println("[CONSOLE] - BUSY");
                         // if channel is busy then we do not try to send at the time
                     } else if (m.getType() == MessageType.FREE) { // The channel is no longer busy (no nodes are sending within our detection range)
-                        System.out.println("FREE");
+                        System.out.println("[CONSOLE] - FREE");
                         // if there is stuff to send then we can send now
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
-                        System.out.print("DATA: ");
+                        System.out.print("[CONSOLE] - DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         // look at the header and if fragmented, rebuild packet and print, if not print data
 
                     } else if (m.getType() == MessageType.DATA_SHORT) { // We received a short data frame!
-                        System.out.print("DATA_SHORT: ");
+                        System.out.print("[CONSOLE] - DATA SHORT: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         // incoming data for data short will mostly be acks
                     } else if (m.getType() == MessageType.DONE_SENDING) { // This node is done sending
                         System.out.println("x");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
-                        System.out.println("HELLO");
+                        System.out.println("[CONSOLE] - HELLO");
                     } else if (m.getType() == MessageType.SENDING) { // This node is sending
-                        System.out.println("SENDING");
+                        System.out.println("[CONSOLE] - SENDING");
                     } else if (m.getType() == MessageType.END) { // Server / audio framework disconnect message. You don't have to handle this
-                        System.out.println("END");
+                        System.out.println("[CONSOLE] - END");
                         System.exit(0);
                     }
                 } catch (InterruptedException e) {

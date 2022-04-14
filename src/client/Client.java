@@ -66,26 +66,27 @@ public class Client {
                     Message msg = sendingQueue.take();
                     System.out.println("Something found");
                     attemptToSendData(msg);
-
-                    Message state = receivedQueue.take();
-                    /*if (state.getType() == MessageType.BUSY) {
-                        System.out.println("Busy. Await for new slot");
-                        clogged = true;
-                        timer = rand.nextInt(200);
-                        while (!clogged) {
-                            timer = timer -1;
-                            if (timer == 0) {
-                                clogged = false;
-                                attemptToSendData(msg);
-                                break;
+                    if (!sendingQueue.isEmpty()) {
+                        Message state = receivedQueue.take();
+                        if (state.getType() == MessageType.BUSY) {
+                            System.out.println("Busy. Await for new slot");
+                            clogged = true;
+                            timer = rand.nextInt(200);
+                            while (clogged) {
+                                timer = timer -1;
+                                if (timer == 0) {
+                                    clogged = false;
+                                    attemptToSendData(msg);
+                                    break;
+                                }
                             }
+                        } else {
+                            int toSendChance = rand.nextInt(1000);
+                            if (toSendChance < 800) {
+                                attemptToSendData(msg);
+                            };
                         }
-                    } else {
-                        int toSendChance = rand.nextInt(1000);
-                        if (toSendChance < 800) {
-                            attemptToSendData(msg);
-                        };
-                    }*/
+                    }
 
                 } catch(InterruptedException e){
                     System.err.println("Failed to take from sendingQueue: "+e);
