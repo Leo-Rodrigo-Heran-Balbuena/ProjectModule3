@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.io.Console;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -190,6 +191,12 @@ public class MyProtocol {
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
                         System.out.print("[CONSOLE] - DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
+                        String string = "";
+                        if (m.getData().hasArray()) {
+                            string = new String(m.getData().array(), StandardCharsets.UTF_8)
+                        }
+                        System.out.println(string);
+
                         // look at the header and if fragmented, rebuild packet and print, if not print data
 
                     } else if (m.getType() == MessageType.DATA_SHORT) { // We received a short data frame!
