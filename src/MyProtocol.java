@@ -1,5 +1,9 @@
 import client.*;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.io.Console;
 import java.util.Arrays;
@@ -67,10 +71,12 @@ public class MyProtocol {
 
         // handle sending from stdin from this thread.
         try {
-            Console console = System.console();
-            String input = "";
 
-            while (console != null && (input = console.readLine()) != null) {
+            BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
+
+            String input = "";
+            while ((input = console.readLine()) != null) {
+
                 byte[] inputBytes = input.getBytes(); // get bytes from input
 //                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
 //                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.
@@ -127,8 +133,11 @@ public class MyProtocol {
                 }
                 //sendingQueue.put(msg);
             }
+            System.out.println("While is not read");
         } catch (InterruptedException e) {
             System.exit(2);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

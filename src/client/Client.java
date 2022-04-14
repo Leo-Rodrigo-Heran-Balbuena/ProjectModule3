@@ -12,7 +12,7 @@ public class Client {
     
     private SocketChannel sock;
 
-    private boolean clogged;                        // Checks if busy
+    private boolean clogged;                                    // Checks if busy
     private int timer = 0;
 
     private BlockingQueue<Message> receivedQueue;
@@ -26,7 +26,8 @@ public class Client {
         System.out.println();
     }
 
-    public Client(String server_ip, int server_port, int frequency, BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue){
+    public Client(String server_ip, int server_port, int frequency,
+                  BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue){
         this.receivedQueue = receivedQueue;
         this.sendingQueue = sendingQueue;
         SocketChannel sock;
