@@ -179,7 +179,7 @@ public class MyProtocol {
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         // incoming data for data short will mostly be acks
                     } else if (m.getType() == MessageType.DONE_SENDING) { // This node is done sending
-                        System.out.println("DONE_SENDING");
+                        System.out.println("x");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
                         System.out.println("HELLO");
                     } else if (m.getType() == MessageType.SENDING) { // This node is sending
