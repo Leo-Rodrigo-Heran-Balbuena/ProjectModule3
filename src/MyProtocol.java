@@ -3,9 +3,7 @@ import client.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.io.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
@@ -55,7 +53,7 @@ public class MyProtocol {
     public byte[] mergeArrays(byte[] array1, byte[] array2) {
         int counter1 = 0, counter2 = 0;
         byte[] result = new byte[array1.length + array2.length];
-        for (int i = 0; i < (array1.length + array2.length - 1); i++) { // might need reduce iterations by 2
+        for (int i = 0; i < (array1.length + array2.length); i++) { // might need reduce iterations by 2
             if (i < array1.length) {
                 result[i] = array1[counter1];
                 counter1++;
@@ -93,25 +91,18 @@ public class MyProtocol {
 
                     ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
 
-                    if (inputBytes.length < 24) {
+                    if (inputBytes.length <= 24) {
                         System.out.println("Check point 1A reached");
                         //padding
                         int necessaryPadding = 24 - inputBytes.length;
                         byte[] zeros = new byte[necessaryPadding];
                         byte[] result = mergeArrays(zeros, inputBytes);
                         byte[] header = createHeader(0, 0, 0,
-                                0, 0, 0, 0, 0, 0);
+                                0, 0, 0, 0, necessaryPadding, 0);
 
                         toSend.put(mergeArrays(header, result),0, 32);
                         msg = new Message(MessageType.DATA, toSend);
                         sendingQueue.put(msg);
-                        System.out.println("Check point 1B reached");
-                    } else if (inputBytes.length == 24) {   // send directly once
-                        byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                        toSend.put(mergeArrays(header, inputBytes), 0, 32);
-                        msg = new Message(MessageType.DATA, toSend); //Create message
-                        sendingQueue.put(msg); //send with header
-
                     } else {
                         int totalPackets = inputBytes.length / 24; // total packet we need to send
                         int remainBytes = inputBytes.length % 24; // the Bytes that needs to be sent in the last packet
