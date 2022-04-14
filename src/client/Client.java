@@ -64,9 +64,11 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    Message state = receivedQueue.take();
+                    System.out.println("Something found");
+                    attemptToSendData(msg);
 
-                    if (state.getType() == MessageType.BUSY) {
+                    Message state = receivedQueue.take();
+                    /*if (state.getType() == MessageType.BUSY) {
                         System.out.println("Busy. Await for new slot");
                         clogged = true;
                         timer = rand.nextInt(200);
@@ -83,7 +85,7 @@ public class Client {
                         if (toSendChance < 800) {
                             attemptToSendData(msg);
                         };
-                    }
+                    }*/
 
                 } catch(InterruptedException e){
                     System.err.println("Failed to take from sendingQueue: "+e);
@@ -112,6 +114,7 @@ public class Client {
         private void attemptToSendData(Message msg) {
             try {
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ){
+                    System.out.println("Beginning Sending Process");
                     ByteBuffer data = msg.getData();
                     data.position(0); //reset position just to be sure
                     int length = data.capacity(); //assume capacity is also what we want to send here!
@@ -124,8 +127,11 @@ public class Client {
                     toSend.put((byte) length);
                     toSend.put(data);
                     toSend.position(0);
-                    // System.out.println("Sending "+Integer.toString(length)+" bytes!");
+                    System.out.println("Sending "+ Integer.toString(length)+" bytes!");
+                    System.out.println("Sent");
                     sock.write(toSend);
+                } else {
+                    System.out.println("Not sent");
                 }
             } catch(IOException e) {
                 System.err.println("Alles is stuk!" );
