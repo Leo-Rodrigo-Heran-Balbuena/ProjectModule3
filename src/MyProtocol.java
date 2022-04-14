@@ -193,7 +193,7 @@ public class MyProtocol {
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         String string = "";
                         if (m.getData().hasArray()) {
-                            string = new String(m.getData().array(), StandardCharsets.UTF_8)
+                            string = new String(m.getData().array(), StandardCharsets.UTF_8);
                         }
                         System.out.println(string);
 
