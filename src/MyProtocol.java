@@ -144,18 +144,14 @@ public class MyProtocol {
         }
     }
 
-/*
+/*  f
     private Message generateMessage(byte[] inputBytes){
         if () {
-
         }
-
         return null;
     }
     private void generateFragmentedMessage(){
-
     }
-
     private void ()
 */
 
