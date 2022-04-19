@@ -43,6 +43,7 @@ public class MyProtocol {
         header[5] = (byte) (ack); // ack number of packet, may be used for reliable transmission and such
         header[6] = (byte) (bitSkip); //bit that needs to be skipped, used for the last message lower than 24 bytes
         header[7] = (byte) (fragmentFlag); //will be set to 1 if the packet was a part of a fragmentation
+        // add hop count
         return header;
 
     }
@@ -203,17 +204,20 @@ public class MyProtocol {
                         ByteBuffer temp = m.getData();
                         int padding = (int) temp.get(6); // create methods for parsing
 
-                        if (padding > 0) {
-                            byte[] data = new byte[24 - padding];
-                            for (int i = 0; i < data.length; i++) {
 
+                        byte[] data = null;
+                        if (padding > 0) {
+                            data = new byte[24 - padding];
+                            for (int i = 0; i < data.length; i++) {
+                                data[i] = m.getData().get(8 + padding + i);
                             }
                         }
 
 
+
                         String string = "";
                         if (m.getData().hasArray()) {
-                            string = new String(m.getData().array(), StandardCharsets.UTF_8);
+                            string = new String(data, StandardCharsets.UTF_8);
                         }
                         System.out.println(string);
 
