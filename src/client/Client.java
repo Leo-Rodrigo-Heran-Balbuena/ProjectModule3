@@ -128,7 +128,8 @@ public class Client {
                     toSend.put((byte) length);
                     toSend.put(data);
                     toSend.position(0);
-                    System.out.println("Sending "+ Integer.toString(length)+" bytes!");
+                    System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
+                    System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
                     System.out.println("Sent");
                     sock.write(toSend);
                 } else {
@@ -239,7 +240,7 @@ public class Client {
                 while( sock.isConnected() ){
                     bytesRead = sock.read(recv);
                     if ( bytesRead > 0 ){
-                        System.out.println("Received "+Integer.toString(bytesRead)+" bytes!");
+                        System.out.println("[CONSOLE] - Received "+Integer.toString(bytesRead)+" bytes!");
                         parseMessage( recv, bytesRead );
                     } else {
                         break;

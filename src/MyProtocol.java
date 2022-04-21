@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -27,7 +28,7 @@ public class MyProtocol {
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
 
-    private final int ID = 1;
+    private int ID = 1;
 
 
     public byte[] createHeader(int senderID, int receiverID, int numberOfMessage,
@@ -68,14 +69,20 @@ public class MyProtocol {
 
 
     public MyProtocol(String server_ip, int server_port, int frequency) {
+
+        /* Initialization */
+
+        Random rand = new Random();
+        this.ID = rand.nextInt(15);
+
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
+        new Client(SERVER_IP, SERVER_PORT, frequency, receivedQueue, sendingQueue);
+        new receiveThread(receivedQueue).start();
 
-        new Client(SERVER_IP, SERVER_PORT, frequency, receivedQueue, sendingQueue); // Give the client the Queues to use
 
-        new receiveThread(receivedQueue).start(); // Start thread to handle received messages!
+        /* Main reading loop */
 
-        // handle sending from stdin from this thread.
         try {
 
             BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
@@ -83,50 +90,11 @@ public class MyProtocol {
             String input = "";
             while ((input = console.readLine()) != null) {
                 System.out.println("This is inputted " + input);
-                byte[] inputBytes = input.getBytes(); // get bytes from input
-//                ByteBuffer toSend = ByteBuffer.allocate(inputBytes.length); // make a new byte buffer with the length of the input string
-//                toSend.put(inputBytes, 0, inputBytes.length); // copy the input string into the byte buffer.
+                byte[] inputBytes = input.getBytes();
                 System.out.println(inputBytes);
                 Message msg;
                 if ((inputBytes.length) > 2) {
-
-                    ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
-
-                    if (inputBytes.length <= 24) {
-
-
-
-                        int necessaryPadding = 24 - inputBytes.length;
-                        byte[] zeros = new byte[necessaryPadding];
-                        byte[] result = mergeArrays(zeros, inputBytes);
-                        byte[] header = createHeader(0, 0, 0,
-                                0, 0, 0, 0, necessaryPadding, 0);
-
-                        toSend.put(mergeArrays(header, result),0, 32);
-                        msg = new Message(MessageType.DATA, toSend);
-                        sendingQueue.put(msg);
-                    } else {
-                        int totalPackets = inputBytes.length / 24; // total packet we need to send
-                        int remainBytes = inputBytes.length % 24; // the Bytes that needs to be sent in the last packet
-                        byte[] temp;
-                        for (int i = 0; i < totalPackets; i++) {
-                            System.out.println("Checkpoint 2A");
-                            if (totalPackets - i == 1 && remainBytes != 0) {
-                                temp = Arrays.copyOfRange(inputBytes, i * 24, inputBytes.length);
-                                // set more fragments flag to zero && set flag indicating fragment to 1
-                            } else {
-                                temp = Arrays.copyOfRange(inputBytes, i * 24, (i + 1) * 24);
-                                // set more fragments flag to 1 and indicate position for re_fragmentation
-                                System.out.println("Checkpoint 2B");
-                            }
-                            byte[] header = createHeader(0, 0, 0, 0, 0, 0, 0, 0, 0);
-                            toSend.put(mergeArrays(header, inputBytes), 0, 32);
-                            msg = new Message(MessageType.DATA, toSend);
-                            sendingQueue.put(msg);
-                            System.out.println(sendingQueue.take());
-                        }
-                    }
-                    //msg = new Message(MessageType.DATA, toSend);
+                    generateMessage(inputBytes);
                 } else {
                     System.out.println("Checkpoint 3A");
                     ByteBuffer toSend = ByteBuffer.allocate(2); // match the form of DATA-SHORT
@@ -145,16 +113,69 @@ public class MyProtocol {
         }
     }
 
-/*  f
-    private Message generateMessage(byte[] inputBytes){
-        if () {
+    // receiverID?
+
+    private void generateMessage(byte[] inputBytes) {
+        generateMessage(inputBytes, false, false, 0);
+    }
+
+    private void generateMessage(byte[] inputBytes, boolean fragment, boolean last, int messageNumber) {
+        ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
+        Message msg = new Message(MessageType.DATA, toSend);
+
+        try {
+            if (inputBytes.length <= 24) {
+                int necessaryPadding = 24 - inputBytes.length;
+                byte[] zeros = new byte[necessaryPadding];
+                byte[] result = mergeArrays(zeros, inputBytes);
+                byte[] header = null;
+
+
+                if (fragment) {
+                    if (last) {
+                        header = createHeader(0, 0, messageNumber, 0, 0, 0, 0, necessaryPadding, 1);
+                    } else {
+                        header = createHeader(0, 0, messageNumber, 0, 1, 0, 0, necessaryPadding, 1);
+                    }
+                } else {
+                    header = createHeader(0, 0, 0, 0, 0, 0, 0, necessaryPadding, 0);
+                }
+
+                toSend.put(mergeArrays(header, result), 0, 32);
+
+                sendingQueue.put(new Message(MessageType.DATA, toSend));
+
+            } else if (inputBytes.length > 24) {
+                generateFragmentedMessage(inputBytes);
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        return null;
+
     }
-    private void generateFragmentedMessage(){
+
+    private void generateFragmentedMessage(byte[] inputBytes){
+
+        int fragments = (int) Math.ceil(inputBytes.length / 24);
+
+        for (int x = 0; x < fragments; x++) {
+
+            byte[] toFragment;
+
+            if (fragments - x != 0) {
+
+                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x + 1) * 24);
+                generateMessage(toFragment, true, false, x + 1);
+
+            } else {
+
+                toFragment = Arrays.copyOfRange(inputBytes, x * 24, inputBytes.length);
+                generateMessage(toFragment, true, true, x + 1);
+
+            }
+        }
+
     }
-    private void ()
-*/
 
     public static void main(String args[]) {
         if (args.length > 0) {
