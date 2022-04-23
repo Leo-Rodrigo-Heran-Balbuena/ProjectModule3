@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 
 public class Client {
@@ -158,9 +159,8 @@ public class Client {
         private boolean messageReceiving = false;
         private boolean shortData = false;
 
-        private void parseMessage( ByteBuffer received, int bytesReceived ){
+        private String parseMessage( ByteBuffer received, int bytesReceived ){
             // printByteBuffer(received, bytesReceived);
-
             try {
                 for( int offset=0; offset < bytesReceived; offset++ ){
                     byte d = received.get(offset);
@@ -175,7 +175,7 @@ public class Client {
                         if( messageBuffer.position() == messageLength ){
 
                             printByteBuffer(messageBuffer, messageLength);
-                            System.out.println("pos: "+Integer.toString(messageBuffer.position()) );
+                            /*System.out.println("pos: "+Integer.toString(messageBuffer.position()) );*/
                             messageBuffer.position(0);
 
                             ByteBuffer temp = ByteBuffer.allocate(messageLength);
@@ -197,7 +197,7 @@ public class Client {
                             // System.out.println("FREE");
                             receivedQueue.put( new Message(MessageType.FREE) );
                         } else if ( d == 0x02 ){ // BUSY
-                            System.out.println("BUSY");
+                            /*System.out.println("BUSY");*/
                             receivedQueue.put( new Message(MessageType.BUSY) );
                         } else if ( d == 0x03 ){ // DATA!
                             messageLength = -1;
@@ -223,14 +223,15 @@ public class Client {
             } catch (InterruptedException e){
                 System.err.println("Failed to put data in receivedQueue: "+e.toString());
             }
+            return "[CONSOLE] - Failed to receive data";
         }
 
         public void printByteBuffer(ByteBuffer bytes, int bytesLength){
-            System.out.print("DATA: ");
+            /*System.out.print("DATA: ");
             for(int i=0; i<bytesLength; i++){
                 System.out.print( Byte.toString( bytes.get(i) )+" " );
             }
-            System.out.println();
+            System.out.println();*/
         }
 
         public void receivingLoop(){
@@ -239,9 +240,14 @@ public class Client {
             try{
                 while( sock.isConnected() ){
                     bytesRead = sock.read(recv);
-                    if ( bytesRead > 0 ){
-                        System.out.println("[CONSOLE] - Received "+Integer.toString(bytesRead)+" bytes!");
-                        parseMessage( recv, bytesRead );
+                    if ( bytesRead > 0 ) {
+                        if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
+                            System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
+                        } else {
+                            System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
+                        }
+                        parseMessage(recv,bytesRead);
+                        TimeUnit.SECONDS.sleep(1);
                     } else {
                         break;
                     }
@@ -249,8 +255,10 @@ public class Client {
                 }
             } catch(IOException e){
                 System.err.println("Error on socket: "+e );
-            }       
-            
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
 
         public void run(){

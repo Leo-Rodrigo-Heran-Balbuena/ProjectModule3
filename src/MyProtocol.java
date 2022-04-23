@@ -202,9 +202,7 @@ public class MyProtocol {
         // Handle messages from the server / audio framework
         public void run() {
             while (true) {
-
                 try {
-
                     Message m = receivedQueue.take();
                     // look at header
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
@@ -216,11 +214,9 @@ public class MyProtocol {
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
                         System.out.print("[CONSOLE] - DATA: ");
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
-
                         // index 6
                         ByteBuffer temp = m.getData();
                         int padding = (int) temp.get(6); // create methods for parsing
-
 
                         byte[] data = null;
                         if (padding > 0) {
@@ -229,8 +225,6 @@ public class MyProtocol {
                                 data[i] = m.getData().get(8 + padding + i);
                             }
                         }
-
-
 
                         String string = "";
                         if (m.getData().hasArray()) {
