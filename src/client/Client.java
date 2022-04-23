@@ -19,6 +19,8 @@ public class Client {
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
 
+    private int ID;
+
     public void printByteBuffer(ByteBuffer bytes, int bytesLength){
         System.out.print("DATA: ");
         for(int i=0; i<bytesLength; i++){
@@ -28,9 +30,10 @@ public class Client {
     }
 
     public Client(String server_ip, int server_port, int frequency,
-                  BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue){
+                  BlockingQueue<Message> receivedQueue, BlockingQueue<Message> sendingQueue, int ID){
         this.receivedQueue = receivedQueue;
         this.sendingQueue = sendingQueue;
+        this.ID = ID;
         SocketChannel sock;
         Sender sender;
         Listener listener;
@@ -241,10 +244,18 @@ public class Client {
                 while( sock.isConnected() ){
                     bytesRead = sock.read(recv);
                     if ( bytesRead > 0 ) {
-                        if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
-                            System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
+
+                        byte[] byteArray = Integer.toString(bytesRead).getBytes();
+                        int senderID = ((int) byteArray[0]) / 10000;
+                        if (senderID == ID) {
+                            break;
                         } else {
-                            System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
+                            if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
+                                System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
+                            } else {
+                                System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
+                            }
+
                         }
                         parseMessage(recv,bytesRead);
                         TimeUnit.SECONDS.sleep(1);
