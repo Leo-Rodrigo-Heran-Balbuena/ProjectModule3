@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -27,6 +29,8 @@ public class MyProtocol {
 
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
+    private List<Message> receivedMessages;
+    private List<Message> receivedMessages2;
 
     private int ID = 1;
 
@@ -77,6 +81,9 @@ public class MyProtocol {
 
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
+        receivedMessages = new ArrayList<>();
+        receivedMessages2 = new ArrayList<>();
+
         new Client(SERVER_IP, SERVER_PORT, frequency, receivedQueue, sendingQueue);
         new receiveThread(receivedQueue).start();
 
@@ -145,7 +152,7 @@ public class MyProtocol {
 
                 sendingQueue.put(new Message(MessageType.DATA, toSend));
 
-            } else if (inputBytes.length > 24) {
+            } else {
                 generateFragmentedMessage(inputBytes);
             }
         } catch (InterruptedException e) {
@@ -174,15 +181,20 @@ public class MyProtocol {
 
             }
         }
-
     }
 
     public static void main(String args[]) {
+
         if (args.length > 0) {
+
             frequency = Integer.parseInt(args[0]);
+
         }
+
         new MyProtocol(SERVER_IP, SERVER_PORT, frequency);
+
     }
+
 
     private class receiveThread extends Thread {
         private BlockingQueue<Message> receivedQueue;
@@ -222,21 +234,109 @@ public class MyProtocol {
                         int padding = (int) temp.get(6); // create methods for parsing
 
 
-                        byte[] data = null;
-                        if (padding > 0) {
-                            data = new byte[24 - padding];
-                            for (int i = 0; i < data.length; i++) {
-                                data[i] = m.getData().get(8 + padding + i);
+                        int fragmented = temp.get(7);
+                        int lastFragment = temp.get(3);
+
+
+                        if (fragmented == 1 && lastFragment == 0) {
+
+                            if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
+                                    temp.get(0) != receivedMessages.get(0).getData().get(0)) {
+
+                                receivedMessages2.add(m);
+
+                            } else {
+
+                                receivedMessages.add(m);
+
                             }
+
+                        } else if (fragmented == 1 && lastFragment == 1) {
+
+
+                            if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
+
+                                int size = receivedMessages.size();
+
+
+                                if (temp.get(1) == size) {
+
+                                    int space = ((size - 1) * 24) + (24 - padding);
+
+                                    ByteBuffer data = ByteBuffer.allocate(space);
+
+
+                                    for (int i = 1; i <= size; i++) {
+
+                                        for (int x = 0; x < size; x++) {
+
+                                            if (receivedMessages.get(x).getData().get(1) == i) {
+
+                                                data.put( receivedMessages.remove(x).getData());
+
+                                            }
+                                        }
+                                    }
+
+                                    System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
+
+                                } else {
+
+                                    System.out.println("A fragment packet has been lost along the way for RM1");
+
+                                }
+                            } else if (receivedMessages2.size() > 0 && temp.get(0) == receivedMessages2.get(0).getData().get(0)) {
+
+                                int size = receivedMessages2.size();
+
+                                if (temp.get(1) == size) {
+
+                                    int space = ((size - 1) * 24) + (24 - padding);
+
+                                    ByteBuffer data = ByteBuffer.allocate(space);
+
+
+                                    for (int i = 1; i <= size; i++) {
+
+                                        for (int x = 0; x < size; x++) {
+
+                                            if (receivedMessages2.get(x).getData().get(1) == i) {
+
+                                                data.put(receivedMessages2.remove(x).getData());
+
+                                            }
+                                        }
+                                    }
+
+                                    System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
+
+                                } else {
+
+                                    System.out.println("A fragment packet has been lost along the way for RM2");
+
+                                }
+                            }
+                        } else {
+                            byte[] data = null;
+                            if (padding > 0) {
+                                data = new byte[24 - padding];
+                                for (int i = 0; i < data.length; i++) {
+                                    data[i] = m.getData().get(8 + padding + i);
+                                }
+                            }
+
+                            String string = "";
+
+                            if (m.getData().hasArray() && data != null) {
+
+                                string = new String(data, StandardCharsets.US_ASCII);
+
+                            }
+
+                            System.out.println(string);
+
                         }
 
-
-
-                        String string = "";
-                        if (m.getData().hasArray()) {
-                            string = new String(data, StandardCharsets.UTF_8);
-                        }
-                        System.out.println(string);
 
                         // look at the header and if fragmented, rebuild packet and print, if not print data
 
