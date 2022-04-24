@@ -69,9 +69,9 @@ public class Client {
                 try{
                     Message msg = sendingQueue.take();
                     System.out.println("Something found");
-                    attemptToSendData(msg);
-                    if (!sendingQueue.isEmpty()) {
-                        Message state = receivedQueue.take();
+                    Message state;
+                    if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
+                        // Message state = receivedQueue.take();
                         if (state.getType() == MessageType.BUSY) {
                             System.out.println("Busy. Await for new slot");
                             clogged = true;
@@ -90,6 +90,8 @@ public class Client {
                                 attemptToSendData(msg);
                             };
                         }
+                    } else {
+                        attemptToSendData(msg);
                     }
 
                 } catch(InterruptedException e){
