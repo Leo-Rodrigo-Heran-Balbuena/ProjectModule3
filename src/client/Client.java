@@ -19,6 +19,9 @@ public class Client {
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
 
+    private Message[] sentMessages = new Message[5];
+    private int packetsSent = 0;
+
     private int ID;
 
     public void printByteBuffer(ByteBuffer bytes, int bytesLength){
@@ -37,6 +40,12 @@ public class Client {
         SocketChannel sock;
         Sender sender;
         Listener listener;
+
+        ByteBuffer toSend = ByteBuffer.allocate(32);
+        for (int x = 0; x < sentMessages.length; x++) {
+            sentMessages[x] = new Message(MessageType.DATA,toSend);
+        }
+
         try{
             sock = SocketChannel.open();
             sock.connect(new InetSocketAddress(server_ip, server_port));
@@ -120,8 +129,16 @@ public class Client {
 
         private void attemptToSendData(Message msg) {
             try {
-                if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ){
-                    System.out.println("Beginning Sending Process");
+                if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
+
+                    for (int x = 0; x < sentMessages.length; x++) {
+                        if (sentMessages.length > 2 && sentMessages[x] != null && sentMessages[2].getData().getInt(2) == msg.getData().getInt(2)) {
+                            System.out.println("[CONSOLE] - MESSAGE ALREADY SENT");
+                        }
+
+                    }
+
+                    System.out.println("[CONSOLE] - Beginning Sending Process");
                     ByteBuffer data = msg.getData();
                     data.position(0); //reset position just to be sure
                     int length = data.capacity(); //assume capacity is also what we want to send here!
@@ -134,12 +151,17 @@ public class Client {
                     toSend.put((byte) length);
                     toSend.put(data);
                     toSend.position(0);
+
+                    sentMessages[packetsSent % 5] = msg;
+                    packetsSent++;
+
                     System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
                     System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
-                    System.out.println("Sent");
+                    System.out.println("[CONSOLE] - MESSAGE SENT");
                     sock.write(toSend);
+
                 } else {
-                    System.out.println("Not sent");
+                    System.out.println("[CONSOLE] - Unable to send");
                 }
             } catch(IOException e) {
                 System.err.println("Alles is stuk!" );
@@ -248,7 +270,7 @@ public class Client {
                     if ( bytesRead > 0 ) {
 
                         byte[] byteArray = Integer.toString(bytesRead).getBytes();
-                        int senderID = ((int) byteArray[0]) / 10000;
+                        int senderID = ((int) byteArray[0]);
                         if (senderID == ID) {
                             break;
                         } else {

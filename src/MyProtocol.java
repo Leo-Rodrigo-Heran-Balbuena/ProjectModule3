@@ -29,22 +29,27 @@ public class MyProtocol {
 
     private BlockingQueue<Message> receivedQueue;
     private BlockingQueue<Message> sendingQueue;
+
+    private Message[] previouslySentPacket = new Message[5];
+
     private List<Message> receivedMessages;
     private List<Message> receivedMessages2;
+
+    private int numberOfPacketsSent = 0;
 
     private int ID = 0;
 
 
-    public byte[] createHeader(int senderID, int receiverID, int numberOfMessage,
+    public byte[] createHeader(int senderID, int forwarderID, int numberOfMessage,
                                int messageID, int moreFragments, int seq, int ack, int bitSkip, int fragmentFlag) {
 
         byte[] header = new byte[8];
 
-        header[0] = (byte) ((senderID * 16) + receiverID); // first byte, first 4 digits senderID second 4 is receiverID
+        header[0] = (byte) (senderID); // first byte, first 4 digits senderID second 4 is receiverID
         header[1] = (byte) (numberOfMessage); // used when reassembling packets, i.e. the order of the packets
         header[2] = (byte) (messageID); // will probably be used for all packets somehow
         header[3] = (byte) moreFragments; // will be set to 1 if there are more fragments coming, 0 if not
-        header[4] = (byte) (seq); // sequence number of packet, may be used for reliable transmission and such
+        header[4] = (byte) (forwarderID); // sequence number of packet, may be used for reliable transmission and such
         header[5] = (byte) (ack); // ack number of packet, may be used for reliable transmission and such
         header[6] = (byte) (bitSkip); //bit that needs to be skipped, used for the last message lower than 24 bytes
         header[7] = (byte) (fragmentFlag); //will be set to 1 if the packet was a part of a fragmentation
@@ -128,7 +133,6 @@ public class MyProtocol {
 
     private void generateMessage(byte[] inputBytes, boolean fragment, boolean last, int messageNumber) {
         ByteBuffer toSend = ByteBuffer.allocate(32); // match the form of DATA
-        Message msg = new Message(MessageType.DATA, toSend);
 
         try {
             if (inputBytes.length <= 24) {
@@ -149,8 +153,11 @@ public class MyProtocol {
                 }
 
                 toSend.put(mergeArrays(header, result), 0, 32);
+                Message msg = new Message(MessageType.DATA, toSend);
+                previouslySentPacket[numberOfPacketsSent % 5] = msg;
+                numberOfPacketsSent++;
 
-                sendingQueue.put(new Message(MessageType.DATA, toSend));
+                sendingQueue.put(msg);
 
             } else {
                 generateFragmentedMessage(inputBytes);
@@ -230,7 +237,7 @@ public class MyProtocol {
                         int fragmented = temp.get(7);
                         int lastFragment = temp.get(3);
 
-                        if ((m.getData().get(0) / 10000) == ID && receivedMessages.contains(m)) {
+                        if ((m.getData().get(0)) == ID && receivedMessages.contains(m)) {
                             break;
                         } else {
 
@@ -256,7 +263,7 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put( receivedMessages.remove(x).getData());
+                                                    data.put(receivedMessages.remove(x).getData());
                                                 }
                                             }
                                         }
@@ -293,14 +300,25 @@ public class MyProtocol {
                                 String string = "";
 
                                 if (m.getData().hasArray() && data != null) {
-
                                     string = new String(data, StandardCharsets.US_ASCII);
-
                                 }
-
                                 System.out.println(string);
-                                sendingQueue.put(m);
+
                             }
+
+                            for (int x = 0; x < previouslySentPacket.length; x++) {
+                                if (m.getData().get(0) == ID) {
+                                    break;
+                                } else {
+                                    ByteBuffer dataInfo = m.getData();
+                                    dataInfo.putInt(4, ID);
+                                    dataInfo.putInt(2,new Random().nextInt(15));
+                                    Message toSend = new Message(MessageType.DATA, dataInfo);
+                                    sendingQueue.put(toSend);
+                                }
+                            }
+
+
                         }
 
 
