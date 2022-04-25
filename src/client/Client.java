@@ -4,6 +4,9 @@ import java.nio.channels.SocketChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +26,8 @@ public class Client {
     private int packetsSent = 0;
     private int[] neighborNodesIDS = new int[4];
     private int neighborIDCounter = 0;
+    private List<Message> fragments = new ArrayList<>();
+    private List<Message> fragments2 = new ArrayList<>();
 
     private int ID;
 
@@ -120,7 +125,7 @@ public class Client {
 
                 } catch(InterruptedException e){
                     System.err.println("Failed to take from sendingQueue: "+e);
-                }                
+                }
             }
         }
 
@@ -146,7 +151,7 @@ public class Client {
             try {
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0));
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
 
 
                     for (int x = 0; x < sentMessages.length; x++) {
@@ -157,8 +162,6 @@ public class Client {
                         }
 
                     }
-
-
 
                     System.out.println("[CONSOLE] - Beginning Sending Process");
                     ByteBuffer data = msg.getData();
@@ -180,16 +183,13 @@ public class Client {
                     neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
                     neighborIDCounter++;
 
-
-/*                    System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
-                    System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
-                    System.out.println("[CONSOLE] - MESSAGE SENT");*/
                     sock.write(toSend);
+                    TimeUnit.MILLISECONDS.sleep(500);
 
                 } else {
                     System.out.println("[CONSOLE] - Unable to send");
                 }
-            } catch(IOException e) {
+            } catch(IOException | InterruptedException e) {
                 System.err.println("Alles is stuk!" );
             }
 

@@ -101,6 +101,7 @@ public class MyProtocol {
 
             String input = "";
             while ((input = console.readLine()) != null) {
+                System.out.println("This is inputted " + input);
                 byte[] inputBytes = input.getBytes();
                 System.out.println(inputBytes);
                 Message msg;
@@ -112,9 +113,11 @@ public class MyProtocol {
                     //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
                     sendingQueue.put(msg);
+                    System.out.println(sendingQueue.take() + "Checkpoint 3B");
                 }
                 //sendingQueue.put(msg);
             }
+            System.out.println("While is not read");
         } catch (InterruptedException e) {
             System.exit(2);
         } catch (IOException e) {
@@ -206,10 +209,10 @@ public class MyProtocol {
         }
 
         public void printByteBuffer(ByteBuffer bytes, int bytesLength) {
-            /*for (int i = 0; i < bytesLength; i++) {
+            for (int i = 0; i < bytesLength; i++) {
                 System.out.print(Byte.toString(bytes.get(i)) + " ");
             }
-            System.out.println();*/
+            System.out.println();
         }
 
         public void run() {
