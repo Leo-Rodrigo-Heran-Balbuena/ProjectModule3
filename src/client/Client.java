@@ -21,6 +21,8 @@ public class Client {
 
     private Message[] sentMessages = new Message[5];
     private int packetsSent = 0;
+    private int[] neighborNodesIDS = new int[4];
+    private int neighborIDCounter = 0;
 
     private int ID;
 
@@ -176,6 +178,10 @@ public class Client {
 
                     sentMessages[packetsSent % 5] = msg;
                     packetsSent++;
+
+                    neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
+                    neighborIDCounter++;
+
 
                     System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
                     System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
