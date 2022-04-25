@@ -48,8 +48,8 @@ public class MyProtocol {
         header[0] = (byte) (senderID); // first byte, first 4 digits senderID second 4 is receiverID
         header[1] = (byte) (numberOfMessage); // used when reassembling packets, i.e. the order of the packets
         header[2] = (byte) (messageID); // will probably be used for all packets somehow
-        header[3] = (byte) moreFragments; // will be set to 1 if there are more fragments coming, 0 if not
-        header[4] = (byte) (forwarderID); // sequence number of packet, may be used for reliable transmission and such
+        header[3] = (byte) (moreFragments); // will be set to 1 if there are more fragments coming, 0 if not
+        header[4] = (byte) (forwarderID); // ID OF THE NODE WHILE FORWARDING
         header[5] = (byte) (ack); // ack number of packet, may be used for reliable transmission and such
         header[6] = (byte) (bitSkip); //bit that needs to be skipped, used for the last message lower than 24 bytes
         header[7] = (byte) (fragmentFlag); //will be set to 1 if the packet was a part of a fragmentation
@@ -137,19 +137,21 @@ public class MyProtocol {
         try {
             if (inputBytes.length <= 24) {
                 int necessaryPadding = 24 - inputBytes.length;
+                int messageID = new Random().nextInt(255);
+
                 byte[] zeros = new byte[necessaryPadding];
                 byte[] result = mergeArrays(zeros, inputBytes);
                 byte[] header = null;
 
 
-                if (fragment) {
-                    if (last) {
-                        header = createHeader(ID, 0, messageNumber, 0, 0, 0, 0, necessaryPadding, 1);
+                if (fragment) { //if DATA is fragment packet
+                    if (last) { //if this message is the last fragment packet
+                        header = createHeader(ID, 0, messageNumber, messageID, 0, 0, 0, necessaryPadding, 1); //Set the moreFragments flag to 0
                     } else {
-                        header = createHeader(ID, 0, messageNumber, 0, 1, 0, 0, necessaryPadding, 1);
+                        header = createHeader(ID, 0, messageNumber, messageID, 1, 0, 0, necessaryPadding, 1); //Set the moreFragments flag to 1
                     }
-                } else {
-                    header = createHeader(ID, 0, messageNumber, 0, 0, 0, 0, necessaryPadding, 0);
+                } else { //if DATA is not fragment packet
+                    header = createHeader(ID, 0, messageNumber, messageID, 0, 0, 0, necessaryPadding, 0); //Set moreFragments and lastFragmentFlag to 0
                 }
 
                 toSend.put(mergeArrays(header, result), 0, 32);
@@ -219,6 +221,7 @@ public class MyProtocol {
         }
 
         public void run() {
+            System.out.println("[CONSOLE] - ID: " + ID);
             while (true) {
 
                 try {
@@ -310,14 +313,13 @@ public class MyProtocol {
                                 if (m.getData().get(0) == ID) {
                                     break;
                                 } else {
+                                    // Changing the forwarder ID
                                     ByteBuffer dataInfo = m.getData();
                                     dataInfo.putInt(4, ID);
-                                    dataInfo.putInt(2,new Random().nextInt(15));
                                     Message toSend = new Message(MessageType.DATA, dataInfo);
                                     sendingQueue.put(toSend);
                                 }
                             }
-
 
                         }
 

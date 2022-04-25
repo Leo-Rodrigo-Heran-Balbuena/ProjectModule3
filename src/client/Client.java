@@ -131,9 +131,12 @@ public class Client {
             try {
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().getInt(2) + " MESSAGE FID: " + msg.getData().getInt(4) + " MESSAGE SENDER: " + msg.getData().getInt(0));
+
                     for (int x = 0; x < sentMessages.length; x++) {
-                        if (sentMessages.length > 2 && sentMessages[x] != null && sentMessages[2].getData().getInt(2) == msg.getData().getInt(2)) {
+                        if (sentMessages[x].getData().getInt(4) == msg.getData().getInt(4)) {
                             System.out.println("[CONSOLE] - MESSAGE ALREADY SENT");
+                            return;
                         }
 
                     }
