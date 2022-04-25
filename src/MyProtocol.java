@@ -279,9 +279,12 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages.remove(x).getData());
+                                                    data.put(receivedMessages.get(x).getData());
                                                 }
                                             }
+                                        }
+                                        for (Message o : receivedMessages) {
+                                            receivedMessages.remove(o);
                                         }
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
@@ -295,9 +298,12 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages2.remove(x).getData());
+                                                    data.put(receivedMessages2.get(x).getData());
                                                 }
                                             }
+                                        }
+                                        for (Message o : receivedMessages2) {
+                                            receivedMessages2.remove(o);
                                         }
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
