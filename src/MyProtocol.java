@@ -143,6 +143,7 @@ public class MyProtocol {
                 byte[] result = mergeArrays(zeros, inputBytes);
                 byte[] header = null;
 
+
                 if (fragment) { //if DATA is fragment packet
                     if (last) { //if this message is the last fragment packet
                         header = createHeader(ID, 0, messageNumber, messageID, 0, 0, 0, necessaryPadding, 1); //Set the moreFragments flag to 0
@@ -155,19 +156,8 @@ public class MyProtocol {
 
                 toSend.put(mergeArrays(header, result), 0, 32);
                 Message msg = new Message(MessageType.DATA, toSend);
-
                 previouslySentPacket[numberOfPacketsSent % 5] = msg;
                 numberOfPacketsSent++;
-
-
-                /*
-
-                if (fragment & last) {
-                    sendingQueue.put(msg);
-                } else if (!fragment) {
-                    sendingQueue.put(msg);
-                }
-                 */
 
                 sendingQueue.put(msg);
 
@@ -192,12 +182,6 @@ public class MyProtocol {
 
                 toFragment = Arrays.copyOfRange(inputBytes, x * 24, inputBytes.length);
                 generateMessage(toFragment, true, true, x + 1);
-
-
-            } else {
-
-                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x + 1) * 24);
-                generateMessage(toFragment, true, false, x + 1);
 
             }
         }
