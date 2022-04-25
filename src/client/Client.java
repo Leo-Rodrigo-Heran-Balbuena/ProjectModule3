@@ -79,10 +79,9 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    System.out.println("Something found");
+                    System.out.println("[CONSOLE] - Something found");
                     Message state;
                     if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
-                        /*
                         if (state.getType() == MessageType.DATA) {
                             clogged = true;
                             timer = rand.nextInt(200);
@@ -96,7 +95,6 @@ public class Client {
                             }
                         }
 
-                         */
                         // Message state = receivedQueue.take();
                         if (state.getType() == MessageType.BUSY) {
                             System.out.println("Busy. Await for new slot");
@@ -183,9 +181,9 @@ public class Client {
                     neighborIDCounter++;
 
 
-                    System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
+/*                    System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
                     System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
-                    System.out.println("[CONSOLE] - MESSAGE SENT");
+                    System.out.println("[CONSOLE] - MESSAGE SENT");*/
                     sock.write(toSend);
 
                 } else {
@@ -301,14 +299,14 @@ public class Client {
                         int senderID = ((int) byteArray[0]);
                         if (senderID == ID) {
                             break;
-                        } else {
+                        } /*else {
                             if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
                                 System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
                             } else {
                                 System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
                             }
 
-                        }
+                        }*/
                         parseMessage(recv,bytesRead);
                         TimeUnit.SECONDS.sleep(1);
                     } else {
