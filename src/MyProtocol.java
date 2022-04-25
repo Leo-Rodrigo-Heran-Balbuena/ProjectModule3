@@ -82,7 +82,7 @@ public class MyProtocol {
         /* Initialization */
 
         Random rand = new Random();
-        this.ID = rand.nextInt(15);
+        this.ID = rand.nextInt(255);
 
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
@@ -143,7 +143,6 @@ public class MyProtocol {
                 byte[] result = mergeArrays(zeros, inputBytes);
                 byte[] header = null;
 
-
                 if (fragment) { //if DATA is fragment packet
                     if (last) { //if this message is the last fragment packet
                         header = createHeader(ID, 0, messageNumber, messageID, 0, 0, 0, necessaryPadding, 1); //Set the moreFragments flag to 0
@@ -156,8 +155,19 @@ public class MyProtocol {
 
                 toSend.put(mergeArrays(header, result), 0, 32);
                 Message msg = new Message(MessageType.DATA, toSend);
+
                 previouslySentPacket[numberOfPacketsSent % 5] = msg;
                 numberOfPacketsSent++;
+
+
+                /*
+
+                if (fragment & last) {
+                    sendingQueue.put(msg);
+                } else if (!fragment) {
+                    sendingQueue.put(msg);
+                }
+                 */
 
                 sendingQueue.put(msg);
 
@@ -174,19 +184,20 @@ public class MyProtocol {
 
         int fragments = (int) Math.ceil(inputBytes.length / 24);
 
-        for (int x = 0; x < fragments; x++) {
+        for (int x = 0; x <= fragments; x++) {
 
             byte[] toFragment;
 
-            if (fragments - x != 0) {
-
-                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x + 1) * 24);
-                generateMessage(toFragment, true, false, x + 1);
-
-            } else {
+            if (fragments - x == 0) {
 
                 toFragment = Arrays.copyOfRange(inputBytes, x * 24, inputBytes.length);
                 generateMessage(toFragment, true, true, x + 1);
+
+
+            } else {
+
+                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x + 1) * 24);
+                generateMessage(toFragment, true, false, x + 1);
 
             }
         }
@@ -240,8 +251,9 @@ public class MyProtocol {
                         int fragmented = temp.get(7);
                         int lastFragment = temp.get(3);
 
-                        if ((m.getData().get(0)) == ID && receivedMessages.contains(m)) {
+                        if ((m.getData().get(0)) == ID) {
                             break;
+
                         } else {
 
                             System.out.print("[CONSOLE] - DATA: ");
@@ -255,6 +267,7 @@ public class MyProtocol {
                                 }
 
                             } else if (fragmented == 1 && lastFragment == 1) {
+
 
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
                                     int size = receivedMessages.size();

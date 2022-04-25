@@ -80,6 +80,21 @@ public class Client {
                     System.out.println("Something found");
                     Message state;
                     if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
+                        /*
+                        if (state.getType() == MessageType.DATA) {
+                            clogged = true;
+                            timer = rand.nextInt(200);
+                            while (clogged) {
+                                timer = timer -1;
+                                if (timer == 0) {
+                                    clogged = false;
+                                    //attemptToSendData(msg);
+                                    break;
+                                }
+                            }
+                        }
+
+                         */
                         // Message state = receivedQueue.take();
                         if (state.getType() == MessageType.BUSY) {
                             System.out.println("Busy. Await for new slot");
@@ -100,10 +115,7 @@ public class Client {
                             }
                         }
                     } else {
-                        int toSendChance = rand.nextInt(10);
-                        if (toSendChance < 8) {
-                            attemptToSendData(msg);
-                        }
+                        attemptToSendData(msg);
                     }
 
                 } catch(InterruptedException e){
@@ -134,15 +146,19 @@ public class Client {
             try {
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().getInt(2) + " MESSAGE FID: " + msg.getData().getInt(4) + " MESSAGE SENDER: " + msg.getData().getInt(0));
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0));
+
 
                     for (int x = 0; x < sentMessages.length; x++) {
-                        if (sentMessages[x].getData().getInt(4) == msg.getData().getInt(4)) {
+                        if (sentMessages[x].getData().get(2) == msg.getData().get(2)) {
                             System.out.println("[CONSOLE] - MESSAGE ALREADY SENT");
                             return;
+
                         }
 
                     }
+
+
 
                     System.out.println("[CONSOLE] - Beginning Sending Process");
                     ByteBuffer data = msg.getData();
