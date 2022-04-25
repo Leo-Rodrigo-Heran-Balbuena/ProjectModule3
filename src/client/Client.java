@@ -94,13 +94,16 @@ public class Client {
                                 }
                             }
                         } else {
-                            int toSendChance = rand.nextInt(1000);
-                            if (toSendChance < 800) {
+                            int toSendChance = rand.nextInt(10);
+                            if (toSendChance < 8) {
                                 attemptToSendData(msg);
-                            };
+                            }
                         }
                     } else {
-                        attemptToSendData(msg);
+                        int toSendChance = rand.nextInt(10);
+                        if (toSendChance < 8) {
+                            attemptToSendData(msg);
+                        }
                     }
 
                 } catch(InterruptedException e){
