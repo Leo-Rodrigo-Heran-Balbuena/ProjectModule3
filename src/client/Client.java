@@ -75,12 +75,42 @@ public class Client {
         }
 
         private void senderLoop(){
+            boolean fragmentWait = false;
             while(sock.isConnected()){
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
                     System.out.println("Something found");
                     Message state;
+                    if (receivedQueue.isEmpty() && !fragmentWait) {
+                        attemptToSendData(msg);
+                    } else {
+                        if ((state = receivedQueue.take()).getType().equals(MessageType.DATA)) {
+                            if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
+                                fragmentWait = true;
+                                continue;
+                            } else if (state.getData().get(3) == 0 && state.getData().get(7) == 1) {
+                                fragmentWait = false;
+                                continue;
+                            }
+                        } else if (state.getType().equals(MessageType.BUSY)) {
+
+                            System.out.println("Busy. Await for new slot");
+                            clogged = true;
+                            timer = rand.nextInt(5000);
+                            while (clogged) {
+                                timer = timer -1;
+                                if (timer == 0) {
+                                    clogged = false;
+                                    attemptToSendData(msg);
+                                    break;
+                                }
+                            }
+
+                        }
+                    }
+
+
                     if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
                         /*
                         if (state.getType() == MessageType.DATA) {
@@ -95,9 +125,9 @@ public class Client {
                                 }
                             }
                         }
-
                          */
                         // Message state = receivedQueue.take();
+
                         if (state.getType() == MessageType.BUSY) {
                             System.out.println("Busy. Await for new slot");
                             clogged = true;
@@ -117,7 +147,17 @@ public class Client {
                             }
                         }
                     } else {
-                        attemptToSendData(msg);
+                        clogged = true;
+                        timer = rand.nextInt(200);
+                        while (clogged) {
+                            timer = timer -1;
+                            if (timer == 0) {
+                                clogged = false;
+                                attemptToSendData(msg);
+                                break;
+                            }
+                        }
+                        // attemptToSendData(msg);
                     }
 
                 } catch(InterruptedException e){

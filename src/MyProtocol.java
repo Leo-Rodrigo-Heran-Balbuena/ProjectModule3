@@ -312,6 +312,7 @@ public class MyProtocol {
 
                             }
 
+                            /*
                             for (int x = 0; x < previouslySentPacket.length; x++) {
                                 if (m.getData().get(0) == ID) {
                                     break;
@@ -323,6 +324,8 @@ public class MyProtocol {
                                     sendingQueue.put(toSend);
                                 }
                             }
+
+                             */
 
                         }
 
