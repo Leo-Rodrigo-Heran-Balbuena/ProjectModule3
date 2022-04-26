@@ -93,6 +93,7 @@ public class Client {
                             if (state.getData() != null) {
                                 if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
                                     fragmentWait = true;
+                                    sendingQueue.put(msg);
                                 } else {
                                     fragmentWait = false;
                                 }
