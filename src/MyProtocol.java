@@ -34,9 +34,9 @@ public class MyProtocol {
     private List<Message> receivedMessages2;
 
     public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final String ANSI_GREEN = "\u001b[32m.";
+    public static final String ANSI_GREEN = "\u001b[32m";
     public static final String ANSI_RED = "\u001B[31m";
-    public static final String ANSI_BLUE = "\u001b[34m.";
+    public static final String ANSI_BLUE = "\u001b[34m";
     public static final String ANSI_MAGENTA = "\u001B[35m";
 
 
@@ -281,15 +281,7 @@ public class MyProtocol {
 
                     Message m = receivedQueue.take();
                     // look at header
-                    if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
-                        printByConsole("BUSY");
-                        /*System.out.println("[CONSOLE] - BUSY");*/
-                        // if channel is busy then we do not try to send at the time
-                    } else if (m.getType() == MessageType.FREE) { // The channel is no longer busy (no nodes are sending within our detection range)
-                        printByConsole("FREE");
-                        /*System.out.println("[CONSOLE] - FREE");*/
-                        // if there is stuff to send then we can send now
-                    } else if (m.getType() == MessageType.DATA) { // We received a data frame!
+                    if (m.getType() == MessageType.DATA) { // We received a data frame!
                         ByteBuffer temp = m.getData();
                         int padding = (int) temp.get(6); // create methods for parsing
                         int fragmented = temp.get(7);
@@ -405,7 +397,7 @@ public class MyProtocol {
                                             }
                                         }
                                         receivedMessages2 = new ArrayList<>();
-                                        printByNode(m.getData().get(0), new String(data.array(), StandardCharsets.US_ASCII));
+                                        /*printByNode(m.getData().get(0), new String(data.array(), StandardCharsets.US_ASCII));*/
                                         /*System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));*/
                                     } else {
                                         printByConsole("A FRAGMENT PACK HAS BEEN LOST ALONG THE WAY FOR RM2");
@@ -466,9 +458,9 @@ public class MyProtocol {
                         printByConsole("SENDING ACCOMPLISHED");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
 
-                        printByConsole("HELLO");
+                        printByConsole("WELCOME TO GROUP 23! MESSAGING APP");
                         printByConsole("ID: " + ID);
-                        printByConsole("TYPE PLS: ");
+                        printByConsole("ENTER MESSAGE: ");
 
                         /*System.out.println(ANSI_YELLOW+ "[CONSOLE] - ID: " + ID + ANSI_RESET);
                         System.out.println(ANSI_YELLOW+ "[CONSOLE] - Type" + ANSI_RESET);*/

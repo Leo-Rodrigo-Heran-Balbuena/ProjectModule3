@@ -85,7 +85,6 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    System.out.println("Something found");
                     Message state;
                     if (receivedQueue.isEmpty() && !fragmentWait) {
                         timer = rand.nextInt(2000);
@@ -114,7 +113,6 @@ public class Client {
                             }
                         } else if (state.getType().equals(MessageType.BUSY)) {
 
-                            System.out.println("Busy. Await for new slot");
                             timer = rand.nextInt(2000);
                             TimeUnit.MILLISECONDS.sleep(timer);
                             sendingQueue.put(msg);
@@ -160,9 +158,6 @@ public class Client {
                 Random rand = new Random();
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
-
-
                     for (int x = 0; x < sentMessages.length; x++) {
                         if (sentMessages[x].getData().get(2) == msg.getData().get(2)) {
                             System.out.println("[CONSOLE] - MESSAGE ALREADY SENT");
@@ -172,7 +167,6 @@ public class Client {
 
                     }
 
-                    System.out.println("[CONSOLE] - Beginning Sending Process");
                     ByteBuffer data = msg.getData();
                     data.position(0); //reset position just to be sure
                     int length = data.capacity(); //assume capacity is also what we want to send here!
@@ -200,7 +194,7 @@ public class Client {
                     System.out.println("[CONSOLE] - Unable to send");
                 }
             } catch(IOException e) {
-                System.err.println("Alles is stuk!" );
+                System.err.println("Alles is stuk!");
             }
 
         }
