@@ -5,12 +5,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is just some example code to show you how to interact
@@ -82,7 +80,7 @@ public class MyProtocol {
         /* Initialization */
 
         Random rand = new Random();
-        this.ID = rand.nextInt(255);
+        this.ID = rand.nextInt(128);
 
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
@@ -101,14 +99,12 @@ public class MyProtocol {
 
             String input = "";
             while ((input = console.readLine()) != null) {
-                System.out.println("This is inputted " + input);
+               /* System.out.println("This is inputted " + input);*/
                 byte[] inputBytes = input.getBytes();
-                System.out.println(inputBytes);
                 Message msg;
                 if ((inputBytes.length) > 2) {
                     generateMessage(inputBytes);
                 } else {
-                    System.out.println("Checkpoint 3A");
                     ByteBuffer toSend = ByteBuffer.allocate(2); // match the form of DATA-SHORT
                     //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
@@ -117,7 +113,6 @@ public class MyProtocol {
                 }
                 //sendingQueue.put(msg);
             }
-            System.out.println("While is not read");
         } catch (InterruptedException e) {
             System.exit(2);
         } catch (IOException e) {
@@ -137,7 +132,8 @@ public class MyProtocol {
         try {
             if (inputBytes.length <= 24) {
                 int necessaryPadding = 24 - inputBytes.length;
-                int messageID = new Random().nextInt(255);
+                int messageID = new Random().nextInt(128);
+                System.out.println("[CONSOLE] - ID CHOSEN FOR MESSAGE: " + messageID);
 
                 byte[] zeros = new byte[necessaryPadding];
                 byte[] result = mergeArrays(zeros, inputBytes);
@@ -172,17 +168,32 @@ public class MyProtocol {
 
     private void generateFragmentedMessage(byte[] inputBytes){
 
-        int fragments = (int) Math.ceil(inputBytes.length / 24);
+        Scanner sc = new Scanner(System.in);
+        // double fragments = Math.ceil(inputBytes.length / 24);
+        System.out.println("[CONSOLE] - MESSAGE LENGTH: "+inputBytes.length);
+        int fragments;
+        if (inputBytes.length % 24 == 0) {
+            fragments = inputBytes.length / 24;
+        } else {
+            fragments = (inputBytes.length / 24) + 1;
+        }
 
-        for (int x = 0; x <= fragments; x++) {
+        System.out.println("[CONSOLE] - NUMBER OF FRAGMENTS: " +fragments);
+        System.out.println("[CONSOLE] - PRESS ENTER TO CONTINUE");
+        String a = sc.nextLine();
+
+        for (int x = 0; x < fragments; x++) {
 
             byte[] toFragment;
 
-            if (fragments - x == 0) {
+            if (fragments - x == 1) {
 
                 toFragment = Arrays.copyOfRange(inputBytes, x * 24, inputBytes.length);
                 generateMessage(toFragment, true, true, x + 1);
 
+            } else {
+                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x+1) * 24);
+                generateMessage(toFragment, true, false, x + 1);
             }
         }
     }
@@ -233,15 +244,16 @@ public class MyProtocol {
                         ByteBuffer temp = m.getData();
                         int padding = (int) temp.get(6); // create methods for parsing
                         int fragmented = temp.get(7);
-                        int lastFragment = temp.get(3);
+                        int moreFragments = temp.get(3);
 
                         if ((m.getData().get(0)) == ID) {
-                            break;
+                            continue;
 
                         } else {
 
                             System.out.print("[CONSOLE] - DATA: ");
-                            if (fragmented == 1 && lastFragment == 0) {
+
+                            if (fragmented == 1 && moreFragments == 1) {
 
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
@@ -250,8 +262,14 @@ public class MyProtocol {
                                     receivedMessages.add(m);
                                 }
 
-                            } else if (fragmented == 1 && lastFragment == 1) {
+                            } else if (fragmented == 1 && moreFragments == 0) {
 
+                                if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
+                                        temp.get(0) != receivedMessages.get(0).getData().get(0)) {
+                                    receivedMessages2.add(m);
+                                } else {
+                                    receivedMessages.add(m);
+                                }
 
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
                                     int size = receivedMessages.size();
@@ -263,15 +281,18 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages.get(x).getData());
+                                                    if (size - x == 1) {
+                                                        data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8 + padding, 32));
+                                                    } else {
+                                                        data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8, 32));
+                                                    }
                                                 }
                                             }
                                         }
-                                        for (Message o : receivedMessages) {
-                                            receivedMessages.remove(o);
-                                        }
+                                        receivedMessages = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
+                                        receivedMessages = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM1");
                                     }
                                 } else if (receivedMessages2.size() > 0 && temp.get(0) == receivedMessages2.get(0).getData().get(0)) {
@@ -282,15 +303,18 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages2.get(x).getData());
+                                                    if (size - x == 1) {
+                                                        data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8 + padding, 32));
+                                                    } else {
+                                                        data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8, 32));
+                                                    }
                                                 }
                                             }
                                         }
-                                        for (Message o : receivedMessages2) {
-                                            receivedMessages2.remove(o);
-                                        }
+                                        receivedMessages2 = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
+                                        receivedMessages2 = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM2");
                                     }
                                 }
@@ -312,20 +336,29 @@ public class MyProtocol {
 
                             }
 
-                            /*
+                            boolean ourPacket = false;
+
                             for (int x = 0; x < previouslySentPacket.length; x++) {
                                 if (m.getData().get(0) == ID) {
+                                    ourPacket = true;
                                     break;
-                                } else {
-                                    // Changing the forwarder ID
-                                    ByteBuffer dataInfo = m.getData();
-                                    dataInfo.putInt(4, ID);
-                                    Message toSend = new Message(MessageType.DATA, dataInfo);
-                                    sendingQueue.put(toSend);
                                 }
                             }
 
-                             */
+                            if (!ourPacket) {
+                                // Changing the forwarder ID
+                                ByteBuffer dataInfo = m.getData();
+                                byte[] data = dataInfo.array();
+                                data[4] = (byte) ID;
+                                ByteBuffer dataInfo1 = ByteBuffer.allocate(32);
+                                dataInfo1.put(data);
+                                Message toSend = new Message(MessageType.DATA, dataInfo1);
+                                // toSend.getData().put((byte) ID);
+                                if (toSend.getData().get(7) == 1) {
+                                    TimeUnit.MILLISECONDS.sleep(500);
+                                }
+                                sendingQueue.put(toSend);
+                            }
 
                         }
 

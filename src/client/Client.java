@@ -1,9 +1,13 @@
 package client;
 
+import javax.sound.midi.SysexMessage;
 import java.nio.channels.SocketChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +27,8 @@ public class Client {
     private int packetsSent = 0;
     private int[] neighborNodesIDS = new int[4];
     private int neighborIDCounter = 0;
+    private List<Message> fragments = new ArrayList<>();
+    private List<Message> fragments2 = new ArrayList<>();
 
     private int ID;
 
@@ -80,37 +86,49 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    System.out.println("Something found");
+                    System.out.println("[CONSOLE] - Something found");
                     Message state;
-                    if (receivedQueue.isEmpty() && !fragmentWait) {
+                    if (msg.getData().get(0) != ID) {
+                        if (msg.getData().get(7) == 0 && msg.getData().get(3) == 1) {
+                            timer = rand.nextInt(500);
+                            TimeUnit.MILLISECONDS.sleep(timer + 200);
+                        } else if (msg.getData().get(3) == 1) {
+                            timer = rand.nextInt(500);
+                            TimeUnit.MILLISECONDS.sleep(timer + 200);
+                        }
+                    }
+
+                    if (!receivedQueue.isEmpty()) {
+                        if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
+                            if (state.getData() != null) {
+                                if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
+                                    fragmentWait = true;
+                                    sendingQueue.put(msg);
+                                } else {
+                                    fragmentWait = false;
+                                }
+
+                            }
+                        }
+
+                        if (!fragmentWait) {
+                            timer = rand.nextInt(2000);
+                            TimeUnit.MILLISECONDS.sleep(700);
+                            attemptToSendData(msg);
+                        }
+                    } else if (!fragmentWait){
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer + 400);
                         attemptToSendData(msg);
                     } else {
-                        if ((state = receivedQueue.take()).getType().equals(MessageType.DATA)) {
-                            if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
-                                fragmentWait = true;
-                            } else if (state.getData().get(3) == 0 && state.getData().get(7) == 1) {
-                                fragmentWait = false;
-                            }
-                        } else if (state.getType().equals(MessageType.BUSY)) {
-
-                            System.out.println("Busy. Await for new slot");
-                            clogged = true;
-                            timer = rand.nextInt(5000);
-                            while (clogged) {
-                                timer = timer -1;
-                                if (timer == 0) {
-                                    clogged = false;
-                                    attemptToSendData(msg);
-                                    break;
-                                }
-                            }
-
-                        }
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer + 400);
+                        sendingQueue.put(msg);
                     }
 
                 } catch(InterruptedException e){
                     System.err.println("Failed to take from sendingQueue: "+e);
-                }                
+                }
             }
         }
 
@@ -121,7 +139,7 @@ public class Client {
             buff.put((byte) ((frequency >> 8)&0xff));
             buff.put((byte) (frequency&0xff));
             buff.position(0);
-            try{
+            try {
                 sock.write(buff);
             } catch(IOException e) {
                 System.err.println("Failed to send HELLO" );
@@ -134,9 +152,10 @@ public class Client {
 
         private void attemptToSendData(Message msg) {
             try {
+                Random rand = new Random();
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0));
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
 
 
                     for (int x = 0; x < sentMessages.length; x++) {
@@ -147,8 +166,6 @@ public class Client {
                         }
 
                     }
-
-
 
                     System.out.println("[CONSOLE] - Beginning Sending Process");
                     ByteBuffer data = msg.getData();
@@ -170,16 +187,15 @@ public class Client {
                     neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
                     neighborIDCounter++;
 
+                    TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
 
-                    System.out.println("[CONSOLE] - Sending "+ Integer.toString(length)+" bytes!");
-                    System.out.println("[CONSOLE] - Sending '"+ msg.toString() +"' ;");
-                    System.out.println("[CONSOLE] - MESSAGE SENT");
                     sock.write(toSend);
+                    TimeUnit.MILLISECONDS.sleep(500);
 
                 } else {
                     System.out.println("[CONSOLE] - Unable to send");
                 }
-            } catch(IOException e) {
+            } catch(IOException | InterruptedException e) {
                 System.err.println("Alles is stuk!" );
             }
 
@@ -228,6 +244,16 @@ public class Client {
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
+                                if (temp.get(7) == 1) {
+                                    System.out.println("[CONSOLE] - WAITING CUZ FRAGMENT");
+                                    TimeUnit.MILLISECONDS.sleep(200);
+                                }
+                                if (temp.get(3) == 0) {
+                                    System.out.println("[CONSOLE] - WAITING CUZ LAST FRAGMENT");
+                                    TimeUnit.MILLISECONDS.sleep(1000);
+                                }
+                                System.out.println("[CONSOLE] - WAITING CUZ WHY NOT");
+                                TimeUnit.MILLISECONDS.sleep(200);
                                 receivedQueue.put( new Message(MessageType.DATA, temp) );
                             }                            
                             messageReceiving = false;
@@ -278,6 +304,7 @@ public class Client {
         }
 
         public void receivingLoop(){
+            Random rand = new Random();
             int bytesRead = 0;
             ByteBuffer recv = ByteBuffer.allocate(1024);
             try{
@@ -289,14 +316,9 @@ public class Client {
                         int senderID = ((int) byteArray[0]);
                         if (senderID == ID) {
                             break;
-                        } else {
-                            if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
-                                System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
-                            } else {
-                                System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
-                            }
-
                         }
+
+                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000)+ 500);
                         parseMessage(recv,bytesRead);
                         TimeUnit.SECONDS.sleep(1);
                     } else {
