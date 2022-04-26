@@ -201,7 +201,9 @@ public class MyProtocol {
                 toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x+1) * 24);
                 generateMessage(toFragment, true, false, x + 1);
             }
+
         }
+
     }
 
     public static void main(String args[]) {
@@ -254,16 +256,19 @@ public class MyProtocol {
 
                         // neighborNode.put(ID, 0);
                         if (temp.get(4) == 0) {
-                            neighborNode.put( (int) temp.get(0), 0);
+                            neighborNode.put( (int) temp.get(0), 5);
                         } else {
-                            neighborNode.put( (int) temp.get(4), 0);
-
+                            neighborNode.put( (int) temp.get(4), 5);
                         }
+
+                        neighborNode.replaceAll((i, v) -> v - 1);
+
 
                         System.out.println("You can reach these nodes: " + neighborNode.keySet());
 
 
                         if ((m.getData().get(0)) == ID) {
+
                             continue;
 
                         } else {
@@ -296,6 +301,7 @@ public class MyProtocol {
 
                                      */
                                     receivedMessages.add(m);
+
                                 }
                                 if (receivedMessages.size() > 1) {
                                     boolean complete = false;
@@ -309,14 +315,20 @@ public class MyProtocol {
                                         }
                                     }
                                     if (complete) {
+
+                                        for (Message x : receivedMessages) {
+                                            if (x.getData().get(3) == 0 && x.getData().get(7) == 1) {
+                                                padding = x.getData().get(6);
+                                            }
+                                        }
+
                                         int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    padding = receivedMessages.get(x).getData().get(6);
-                                                    if (size - x == 1) {
+                                                    if (size - i == 0) {
                                                         data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8 + padding, 32));
                                                     } else {
                                                         data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8, 32));
@@ -343,13 +355,19 @@ public class MyProtocol {
                                         }
                                     }
                                     if (complete) {
+
+                                        for (Message x : receivedMessages2) {
+                                            if (x.getData().get(3) == 0 && x.getData().get(7) == 1) {
+                                                padding = x.getData().get(6);
+                                            }
+                                        }
+
                                         int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    padding = receivedMessages.get(x).getData().get(6);
                                                     if (size - x == 1) {
                                                         data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8 + padding, 32));
                                                     } else {
