@@ -97,8 +97,10 @@ public class Client {
                                 } else {
                                     fragmentWait = false;
                                 }
+
                             }
                         }
+
                         if (!fragmentWait) {
                             timer = rand.nextInt(2000);
                             TimeUnit.MILLISECONDS.sleep(timer);
@@ -108,6 +110,10 @@ public class Client {
                         timer = rand.nextInt(2000);
                         TimeUnit.MILLISECONDS.sleep(timer);
                         attemptToSendData(msg);
+                    } else {
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer);
+                        sendingQueue.put(msg);
                     }
 
                 } catch(InterruptedException e){

@@ -353,7 +353,7 @@ public class MyProtocol {
                                 dataInfo1.put(data);
                                 Message toSend = new Message(MessageType.DATA, dataInfo1);
                                 // toSend.getData().put((byte) ID);
-                                // sendingQueue.put(toSend);
+                                sendingQueue.put(toSend);
                             }
 
                         }
