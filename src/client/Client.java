@@ -86,44 +86,45 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    System.out.println("[CONSOLE] - Something found");
+                    System.out.println("Something found");
                     Message state;
-                    if (msg.getData().get(0) != ID) {
-                        if (msg.getData().get(7) == 0 && msg.getData().get(3) == 1) {
-                            timer = rand.nextInt(500);
-                            TimeUnit.MILLISECONDS.sleep(timer + 200);
-                        } else if (msg.getData().get(3) == 1) {
-                            timer = rand.nextInt(500);
-                            TimeUnit.MILLISECONDS.sleep(timer + 200);
+                    if (receivedQueue.isEmpty() && !fragmentWait) {
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer);
+                        if (timer < 900) {
+                            attemptToSendData(msg);
+                        } else {
+                            TimeUnit.MILLISECONDS.sleep(timer);
+                            sendingQueue.put(msg);
                         }
-                    }
+                        // attemptToSendData(msg);
+                    } else {
+                        if ((state = receivedQueue.take()).getType().equals(MessageType.DATA)) {
+                            if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
+                                fragmentWait = true;
+                                sendingQueue.put(msg);
+                            } else if (state.getData().get(3) == 0 && state.getData().get(7) == 1) {
+                                fragmentWait = false;
+                                timer = rand.nextInt(2000);
+                                TimeUnit.MILLISECONDS.sleep(timer);
+                            }
+                        } else if (state.getType().equals(MessageType.BUSY)) {
 
-                    if (!receivedQueue.isEmpty()) {
-                        if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
-                            if (state.getData() != null) {
-                                if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
-                                    fragmentWait = true;
-                                    sendingQueue.put(msg);
-                                } else {
-                                    fragmentWait = false;
-                                }
+                            System.out.println("Busy. Await for new slot");
+                            timer = rand.nextInt(2000);
+                            TimeUnit.MILLISECONDS.sleep(timer);
+                            sendingQueue.put(msg);
 
+                        } else if (state.getType().equals(MessageType.FREE)) {
+                            timer = rand.nextInt(2000);
+                            TimeUnit.MILLISECONDS.sleep(timer);
+                            if (timer < 900) {
+                                attemptToSendData(msg);
+                            } else {
+                                TimeUnit.MILLISECONDS.sleep(timer);
+                                sendingQueue.put(msg);
                             }
                         }
-
-                        if (!fragmentWait) {
-                            timer = rand.nextInt(2000);
-                            TimeUnit.MILLISECONDS.sleep(700);
-                            attemptToSendData(msg);
-                        }
-                    } else if (!fragmentWait){
-                        timer = rand.nextInt(2000);
-                        TimeUnit.MILLISECONDS.sleep(timer + 400);
-                        attemptToSendData(msg);
-                    } else {
-                        timer = rand.nextInt(2000);
-                        TimeUnit.MILLISECONDS.sleep(timer + 400);
-                        sendingQueue.put(msg);
                     }
 
                 } catch(InterruptedException e){
@@ -187,15 +188,15 @@ public class Client {
                     neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
                     neighborIDCounter++;
 
-                    TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                    // TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
 
                     sock.write(toSend);
-                    TimeUnit.MILLISECONDS.sleep(500);
+                    // TimeUnit.MILLISECONDS.sleep(500);
 
                 } else {
                     System.out.println("[CONSOLE] - Unable to send");
                 }
-            } catch(IOException | InterruptedException e) {
+            } catch(IOException e) {
                 System.err.println("Alles is stuk!" );
             }
 
@@ -244,17 +245,22 @@ public class Client {
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
+                                /*
                                 if (temp.get(7) == 1) {
                                     System.out.println("[CONSOLE] - WAITING CUZ FRAGMENT");
                                     TimeUnit.MILLISECONDS.sleep(200);
                                 }
-                                if (temp.get(3) == 0) {
+                                if (temp.get(7) == 1 && temp.get(3) == 0) {
                                     System.out.println("[CONSOLE] - WAITING CUZ LAST FRAGMENT");
                                     TimeUnit.MILLISECONDS.sleep(1000);
                                 }
                                 System.out.println("[CONSOLE] - WAITING CUZ WHY NOT");
                                 TimeUnit.MILLISECONDS.sleep(200);
+
+                                 */
                                 receivedQueue.put( new Message(MessageType.DATA, temp) );
+
+
                             }                            
                             messageReceiving = false;
                         }

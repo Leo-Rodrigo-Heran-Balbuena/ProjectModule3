@@ -268,7 +268,15 @@ public class MyProtocol {
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
                                     receivedMessages2.add(m);
                                 } else {
-                                    receivedMessages.add(m);
+                                    if (receivedMessages.size() > 0) {
+                                        if (temp.get(4) == receivedMessages.get(0).getData().get(4)) {
+                                            receivedMessages.add(m);
+                                        }
+                                    } else {
+                                        receivedMessages.add(m);
+
+                                    }
+                                    // receivedMessages.add(m);
                                 }
 
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
