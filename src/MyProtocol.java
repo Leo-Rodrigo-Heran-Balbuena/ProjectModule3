@@ -173,17 +173,26 @@ public class MyProtocol {
 
     private void generateFragmentedMessage(byte[] inputBytes){
 
-        int fragments = (int) Math.ceil(inputBytes.length / 24);
+        // double fragments = Math.ceil(inputBytes.length / 24);
+        int fragments;
+        if (inputBytes.length % 24 == 0) {
+            fragments = inputBytes.length / 24;
+        } else {
+            fragments = (inputBytes.length / 24) + 1;
+        }
 
-        for (int x = 0; x <= fragments; x++) {
+        for (int x = 0; x < fragments; x++) {
 
             byte[] toFragment;
 
-            if (fragments - x == 0) {
+            if (fragments - x == 1) {
 
                 toFragment = Arrays.copyOfRange(inputBytes, x * 24, inputBytes.length);
                 generateMessage(toFragment, true, true, x + 1);
 
+            } else {
+                toFragment = Arrays.copyOfRange(inputBytes, x * 24, (x+1) * 24);
+                generateMessage(toFragment, true, false, x + 1);
             }
         }
     }
@@ -234,7 +243,7 @@ public class MyProtocol {
                         ByteBuffer temp = m.getData();
                         int padding = (int) temp.get(6); // create methods for parsing
                         int fragmented = temp.get(7);
-                        int lastFragment = temp.get(3);
+                        int moreFragments = temp.get(3);
 
                         if ((m.getData().get(0)) == ID) {
                             break;
@@ -242,7 +251,7 @@ public class MyProtocol {
                         } else {
 
                             System.out.print("[CONSOLE] - DATA: ");
-                            if (fragmented == 1 && lastFragment == 0) {
+                            if (fragmented == 1 && moreFragments == 1) {
 
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
@@ -251,8 +260,7 @@ public class MyProtocol {
                                     receivedMessages.add(m);
                                 }
 
-                            } else if (fragmented == 1 && lastFragment == 1) {
-
+                            } else if (fragmented == 1 && moreFragments == 0) {
 
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
                                     int size = receivedMessages.size();
