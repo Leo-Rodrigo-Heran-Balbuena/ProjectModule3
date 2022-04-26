@@ -246,11 +246,12 @@ public class MyProtocol {
                         int moreFragments = temp.get(3);
 
                         if ((m.getData().get(0)) == ID) {
-                            break;
+                            continue;
 
                         } else {
 
                             System.out.print("[CONSOLE] - DATA: ");
+
                             if (fragmented == 1 && moreFragments == 1) {
 
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
@@ -265,14 +266,14 @@ public class MyProtocol {
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
                                     int size = receivedMessages.size();
 
-                                    if (temp.get(1) == size) {
+                                    if (temp.get(1) == size - 1) {
                                         int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages.remove(x).getData());
+                                                    data.put(receivedMessages.get(x).getData());
                                                 }
                                             }
                                         }

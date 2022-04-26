@@ -88,7 +88,7 @@ public class Client {
                     System.out.println("[CONSOLE] - Something found");
                     Message state;
 
-                    if (!receivedQueue.isEmpty() && !fragmentWait) {
+                    if (!receivedQueue.isEmpty()) {
                         if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
                             if (state.getData() != null) {
                                 if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
@@ -104,7 +104,7 @@ public class Client {
                             TimeUnit.MILLISECONDS.sleep(timer);
                             attemptToSendData(msg);
                         }
-                    } else {
+                    } else if (!fragmentWait){
                         timer = rand.nextInt(2000);
                         TimeUnit.MILLISECONDS.sleep(timer);
                         attemptToSendData(msg);
