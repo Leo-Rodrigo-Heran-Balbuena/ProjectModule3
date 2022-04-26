@@ -88,10 +88,8 @@ public class Client {
                         if ((state = receivedQueue.take()).getType().equals(MessageType.DATA)) {
                             if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
                                 fragmentWait = true;
-                                continue;
                             } else if (state.getData().get(3) == 0 && state.getData().get(7) == 1) {
                                 fragmentWait = false;
-                                continue;
                             }
                         } else if (state.getType().equals(MessageType.BUSY)) {
 
@@ -108,56 +106,6 @@ public class Client {
                             }
 
                         }
-                    }
-
-
-                    if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
-                        /*
-                        if (state.getType() == MessageType.DATA) {
-                            clogged = true;
-                            timer = rand.nextInt(200);
-                            while (clogged) {
-                                timer = timer -1;
-                                if (timer == 0) {
-                                    clogged = false;
-                                    //attemptToSendData(msg);
-                                    break;
-                                }
-                            }
-                        }
-                         */
-                        // Message state = receivedQueue.take();
-
-                        if (state.getType() == MessageType.BUSY) {
-                            System.out.println("Busy. Await for new slot");
-                            clogged = true;
-                            timer = rand.nextInt(200);
-                            while (clogged) {
-                                timer = timer -1;
-                                if (timer == 0) {
-                                    clogged = false;
-                                    attemptToSendData(msg);
-                                    break;
-                                }
-                            }
-                        } else {
-                            int toSendChance = rand.nextInt(10);
-                            if (toSendChance < 8) {
-                                attemptToSendData(msg);
-                            }
-                        }
-                    } else {
-                        clogged = true;
-                        timer = rand.nextInt(200);
-                        while (clogged) {
-                            timer = timer -1;
-                            if (timer == 0) {
-                                clogged = false;
-                                attemptToSendData(msg);
-                                break;
-                            }
-                        }
-                        // attemptToSendData(msg);
                     }
 
                 } catch(InterruptedException e){
