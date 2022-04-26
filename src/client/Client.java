@@ -91,7 +91,7 @@ public class Client {
                     if (receivedQueue.isEmpty() && !fragmentWait) {
                         timer = rand.nextInt(2000);
                         TimeUnit.MILLISECONDS.sleep(timer);
-                        if (timer < 500) {
+                        if (timer < 750) {
                             attemptToSendData(msg);
                         } else {
                             TimeUnit.MILLISECONDS.sleep(timer);
@@ -107,7 +107,7 @@ public class Client {
                                 fragmentWait = false;
                                 timer = rand.nextInt(2000);
                                 TimeUnit.MILLISECONDS.sleep(timer);
-                                if (timer < 500) {
+                                if (timer < 1500) {
                                     attemptToSendData(msg);
                                 } else {
                                     TimeUnit.MILLISECONDS.sleep(timer);
@@ -124,7 +124,7 @@ public class Client {
                         } else if (state.getType().equals(MessageType.FREE)) {
                             timer = rand.nextInt(2000);
                             TimeUnit.MILLISECONDS.sleep(timer);
-                            if (timer < 500) {
+                            if (timer < 1500) {
                                 attemptToSendData(msg);
                             } else {
                                 TimeUnit.MILLISECONDS.sleep(timer);

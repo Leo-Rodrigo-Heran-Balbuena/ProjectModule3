@@ -253,7 +253,12 @@ public class MyProtocol {
                         int moreFragments = temp.get(3);
 
                         // neighborNode.put(ID, 0);
-                        neighborNode.put( (int) temp.get(4), 0);
+                        if (temp.get(4) == 0) {
+                            neighborNode.put( (int) temp.get(0), 0);
+                        } else {
+                            neighborNode.put( (int) temp.get(4), 0);
+
+                        }
 
                         System.out.println("You can reach these nodes: " + neighborNode.keySet());
 
@@ -265,18 +270,22 @@ public class MyProtocol {
 
                             System.out.print("[CONSOLE] - DATA: ");
 
-                            if (fragmented == 1 && moreFragments == 1) {
-
+                            if (fragmented == 1) {
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
+                                    /*
                                     if (receivedMessages2.size() > 0) {
                                         if (temp.get(4) == receivedMessages2.get(0).getData().get(4)) {
                                             receivedMessages2.add(m);
                                         }
                                     } else {
-                                        receivedMessages.add(m);
+                                        receivedMessages2.add(m);
                                     }
+
+                                     */
+                                    receivedMessages2.add(m);
                                 } else {
+                                    /*
                                     if (receivedMessages.size() > 0) {
                                         if (temp.get(4) == receivedMessages.get(0).getData().get(4)) {
                                             receivedMessages.add(m);
@@ -284,41 +293,29 @@ public class MyProtocol {
                                     } else {
                                         receivedMessages.add(m);
                                     }
-                                    // receivedMessages.add(m);
+
+                                     */
+                                    receivedMessages.add(m);
                                 }
-
-                            } else if (fragmented == 1 && moreFragments == 0) {
-
-                                if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
-                                        temp.get(0) != receivedMessages.get(0).getData().get(0)) {
-                                    if (receivedMessages2.size() > 0) {
-                                        if (temp.get(4) == receivedMessages2.get(0).getData().get(4)) {
-                                            receivedMessages2.add(m);
-                                        }
-                                    } else {
-                                        receivedMessages.add(m);
-                                    }
-                                } else {
-                                    if (receivedMessages.size() > 0) {
-                                        if (temp.get(4) == receivedMessages.get(0).getData().get(4)) {
-                                            receivedMessages.add(m);
-                                        }
-                                    } else {
-                                        receivedMessages.add(m);
-                                    }
-                                    // receivedMessages.add(m);
-                                }
-
-                                if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
+                                if (receivedMessages.size() > 1) {
+                                    boolean complete = false;
                                     int size = receivedMessages.size();
+                                    for (Message receivedMessage : receivedMessages) {
+                                        if (receivedMessage.getData().get(3) == 0 && receivedMessage.getData().get(7) == 1 &&
+                                                size == receivedMessage.getData().get(1)) {
 
-                                    if (temp.get(1) == size) {
+                                            complete = true;
+
+                                        }
+                                    }
+                                    if (complete) {
                                         int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
+                                                    padding = receivedMessages.get(x).getData().get(6);
                                                     if (size - x == 1) {
                                                         data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8 + padding, 32));
                                                     } else {
@@ -330,17 +327,29 @@ public class MyProtocol {
                                         receivedMessages = new ArrayList<>();
                                         System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
-                                        receivedMessages = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM1");
                                     }
-                                } else if (receivedMessages2.size() > 0 && temp.get(0) == receivedMessages2.get(0).getData().get(0)) {
+                                }
+
+                                if (receivedMessages2.size() > 1) {
+                                    boolean complete = false;
                                     int size = receivedMessages2.size();
-                                    if (temp.get(1) == size) {
+                                    for (Message receivedMessage : receivedMessages2) {
+                                        if (receivedMessage.getData().get(3) == 0 && receivedMessage.getData().get(7) == 1 &&
+                                                size == receivedMessage.getData().get(1)) {
+
+                                            complete = true;
+
+                                        }
+                                    }
+                                    if (complete) {
                                         int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
+
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
+                                                    padding = receivedMessages.get(x).getData().get(6);
                                                     if (size - x == 1) {
                                                         data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8 + padding, 32));
                                                     } else {
@@ -352,7 +361,6 @@ public class MyProtocol {
                                         receivedMessages2 = new ArrayList<>();
                                         System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
-                                        receivedMessages2 = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM2");
                                     }
                                 }
@@ -371,19 +379,20 @@ public class MyProtocol {
                                     string = new String(data, StandardCharsets.US_ASCII);
                                 }
                                 System.out.println(string);
-
                             }
 
-                            boolean ourPacket = false;
 
-                            for (int x = 0; x < previouslySentPacket.length; x++) {
-                                if (m.getData().get(0) == ID) {
-                                    ourPacket = true;
-                                    break;
+                            boolean alreadySent = false;
+
+                            for (Message message : previouslySentPacket) {
+                                if (message != null) {
+                                    if (m.getData().get(2) == message.getData().get(2)) {
+                                        alreadySent = true;
+                                    }
                                 }
                             }
 
-                            if (!ourPacket) {
+                            if (!alreadySent) {
                                 // Changing the forwarder ID
                                 ByteBuffer dataInfo = m.getData();
                                 byte[] data = dataInfo.array();
@@ -391,17 +400,12 @@ public class MyProtocol {
                                 ByteBuffer dataInfo1 = ByteBuffer.allocate(32);
                                 dataInfo1.put(data);
                                 Message toSend = new Message(MessageType.DATA, dataInfo1);
-                                // toSend.getData().put((byte) ID);
-                                if (toSend.getData().get(7) == 1) {
-                                    TimeUnit.MILLISECONDS.sleep(500);
-                                }
                                 sendingQueue.put(toSend);
                             }
 
                         }
 
-
-                        printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
+                        // printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
 
                         // index 6
                         // look at the header and if fragmented, rebuild packet and print, if not print data
