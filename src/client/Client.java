@@ -90,34 +90,30 @@ public class Client {
 
                     if (!receivedQueue.isEmpty()) {
                         if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
-                            if (msg.getData().get(0) == ID) {
-                                attemptToSendData(msg);
-                            } else {
-                                if (msg.getData().get(7) == 1) {
-                                    if (msg.getData().get(3) == 1) {
-                                        while ((msg = sendingQueue.take()).getData().get(3) == 0) {
-                                            fragments.add(msg);
-                                        }
-                                        for (int x = 0; x < fragments.size(); x++) {
-                                            TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
-                                            attemptToSendData(msg);
-                                        }
-                                    } else {
-                                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
-                                        attemptToSendData(msg);
-                                    }
+                            if (state.getData() != null) {
+                                if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
+                                    fragmentWait = true;
+                                    sendingQueue.put(msg);
                                 } else {
-                                    TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
-                                    attemptToSendData(msg);
+                                    fragmentWait = false;
                                 }
+
                             }
-                        } else {
-                            TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                        }
+
+                        if (!fragmentWait) {
+                            timer = rand.nextInt(2000);
+                            TimeUnit.MILLISECONDS.sleep(timer);
                             attemptToSendData(msg);
                         }
-                    } else {
-                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                    } else if (!fragmentWait){
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer);
                         attemptToSendData(msg);
+                    } else {
+                        timer = rand.nextInt(2000);
+                        TimeUnit.MILLISECONDS.sleep(timer);
+                        sendingQueue.put(msg);
                     }
 
                 } catch(InterruptedException e){
@@ -149,7 +145,7 @@ public class Client {
                 Random rand = new Random();
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7) + " LASTFRAG FLAG: " + msg.getData().get(3) );
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
 
 
                     for (int x = 0; x < sentMessages.length; x++) {

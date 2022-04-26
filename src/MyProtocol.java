@@ -274,20 +274,24 @@ public class MyProtocol {
                                     int size = receivedMessages.size();
 
                                     if (temp.get(1) == size) {
-                                        // int space = ((size - 1) * 24) + (24 - padding);
-                                        int space = size * 24;
+                                        int space = ((size - 1) * 24) + (24 - padding);
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8, 32));
+                                                    if (size - x == 1) {
+                                                        data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8 + padding, 32));
+                                                    } else {
+                                                        data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8, 32));
+                                                    }
                                                 }
                                             }
                                         }
                                         receivedMessages = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
+                                        receivedMessages = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM1");
                                     }
                                 } else if (receivedMessages2.size() > 0 && temp.get(0) == receivedMessages2.get(0).getData().get(0)) {
@@ -298,13 +302,18 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8, 32));
+                                                    if (size - x == 1) {
+                                                        data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8 + padding, 32));
+                                                    } else {
+                                                        data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8, 32));
+                                                    }
                                                 }
                                             }
                                         }
                                         receivedMessages2 = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
+                                        receivedMessages2 = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM2");
                                     }
                                 }
@@ -344,7 +353,7 @@ public class MyProtocol {
                                 dataInfo1.put(data);
                                 Message toSend = new Message(MessageType.DATA, dataInfo1);
                                 // toSend.getData().put((byte) ID);
-                                // sendingQueue.put(toSend);
+                                sendingQueue.put(toSend);
                             }
 
                         }
