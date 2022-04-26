@@ -96,7 +96,6 @@ public class Client {
                             TimeUnit.MILLISECONDS.sleep(timer);
                             sendingQueue.put(msg);
                         }
-                        // attemptToSendData(msg);
                     } else {
                         if ((state = receivedQueue.take()).getType().equals(MessageType.DATA)) {
                             if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
@@ -239,7 +238,6 @@ public class Client {
                         if( messageBuffer.position() == messageLength ){
 
                             printByteBuffer(messageBuffer, messageLength);
-                            /*System.out.println("pos: "+Integer.toString(messageBuffer.position()) );*/
                             messageBuffer.position(0);
 
                             ByteBuffer temp = ByteBuffer.allocate(messageLength);
@@ -249,51 +247,30 @@ public class Client {
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
-                                /*
-                                if (temp.get(7) == 1) {
-                                    System.out.println("[CONSOLE] - WAITING CUZ FRAGMENT");
-                                    TimeUnit.MILLISECONDS.sleep(200);
-                                }
-                                if (temp.get(7) == 1 && temp.get(3) == 0) {
-                                    System.out.println("[CONSOLE] - WAITING CUZ LAST FRAGMENT");
-                                    TimeUnit.MILLISECONDS.sleep(1000);
-                                }
-                                System.out.println("[CONSOLE] - WAITING CUZ WHY NOT");
-                                TimeUnit.MILLISECONDS.sleep(200);
-
-                                 */
                                 receivedQueue.put( new Message(MessageType.DATA, temp) );
-
-
                             }                            
                             messageReceiving = false;
                         }
                     } else {
                         if ( d == 0x09 ){ // Connection successfull!
-                            // System.out.println("CONNECTED");
                             receivedQueue.put( new Message(MessageType.HELLO) );
                         } else if ( d == 0x01 ){ // FREE
-                            // System.out.println("FREE");
                             receivedQueue.put( new Message(MessageType.FREE) );
                         } else if ( d == 0x02 ){ // BUSY
-                            /*System.out.println("BUSY");*/
                             receivedQueue.put( new Message(MessageType.BUSY) );
                         } else if ( d == 0x03 ){ // DATA!
                             messageLength = -1;
                             messageReceiving = true;
                             shortData = false;
                         } else if ( d == 0x04 ){ // SENDING
-                            // System.out.println("SENDING");
                             receivedQueue.put( new Message(MessageType.SENDING) );
                         } else if ( d == 0x05 ){ // DONE_SENDING
-                            // System.out.println("DONE_SENDING");
                             receivedQueue.put( new Message(MessageType.DONE_SENDING) );
                         }else if ( d == 0x06 ){ // DATA_SHORT
                             messageLength = -1;
                             messageReceiving = true;
                             shortData = true;
                         }else if ( d == 0x08 ){ // END, connection closing
-                            // System.out.println("END");
                             receivedQueue.put( new Message(MessageType.END) );
                         }
                     } 

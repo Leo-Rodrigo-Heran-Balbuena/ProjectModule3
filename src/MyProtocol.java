@@ -34,7 +34,15 @@ public class MyProtocol {
     private List<Message> receivedMessages2;
 
     public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_GREEN = "\u001b[32m.";
+    public static final String ANSI_RED = "\u001B[31m";
+    public static final String ANSI_BLUE = "\u001b[34m.";
+    public static final String ANSI_MAGENTA = "\u001B[35m";
+
+
     public static final String ANSI_RESET = "\u001B[0m";
+
+
     private HashMap<Integer,Integer> neighborNode;
 
     private int numberOfPacketsSent = 0;
@@ -78,6 +86,34 @@ public class MyProtocol {
         return result;
     }
 
+    private void printByConsole(String msg) {
+        System.out.println(ANSI_YELLOW + "[CONSOLE]: "+ msg + ANSI_RESET);
+    }
+
+    private void printByDrama(String msg) {
+        try {
+            for (int x = 0; x < msg.length(); x++) {
+                System.out.print(msg.charAt(x));
+                TimeUnit.MILLISECONDS.sleep(105);
+            }
+            System.out.println("");
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void printByNode(int nodeID, String msg) {
+        if (nodeID >= 0 && nodeID < 32) {
+            System.out.print(ANSI_BLUE + "[" + nodeID + "]" + ": "+ ANSI_RESET);
+        } else if (nodeID > 32 && nodeID < 64) {
+            System.out.print(ANSI_RED + "[" + nodeID + "]" + ": "+ ANSI_RESET);
+        } else if (nodeID > 64 && nodeID < 96) {
+            System.out.print(ANSI_GREEN + "[" + nodeID + "]" + ": "+ ANSI_RESET);
+        } else {
+            System.out.print(ANSI_MAGENTA + "[" + nodeID + "]" + ": "+ ANSI_RESET);
+        }
+        printByDrama(msg);
+    }
 
     public MyProtocol(String server_ip, int server_port, int frequency) {
 
@@ -105,7 +141,6 @@ public class MyProtocol {
 
             String input = "";
             while ((input = console.readLine()) != null) {
-               /* System.out.println("This is inputted " + input);*/
                 byte[] inputBytes = input.getBytes();
                 Message msg;
                 if ((inputBytes.length) > 2) {
@@ -115,7 +150,7 @@ public class MyProtocol {
                     //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
                     sendingQueue.put(msg);
-                    System.out.println(sendingQueue.take() + "Checkpoint 3B");
+
                 }
                 //sendingQueue.put(msg);
             }
@@ -139,7 +174,8 @@ public class MyProtocol {
             if (inputBytes.length <= 24) {
                 int necessaryPadding = 24 - inputBytes.length;
                 int messageID = new Random().nextInt(128);
-                System.out.println("[CONSOLE] - ID CHOSEN FOR MESSAGE: " + messageID);
+                printByConsole("ID CHOSEN FOR MESSAGE: " + messageID);
+                /*System.out.println(ANSI_YELLOW + "[CONSOLE] - ID CHOSEN FOR MESSAGE: " + messageID + ANSI_RESET);*/
 
                 byte[] zeros = new byte[necessaryPadding];
                 byte[] result = mergeArrays(zeros, inputBytes);
@@ -176,7 +212,7 @@ public class MyProtocol {
 
         Scanner sc = new Scanner(System.in);
         // double fragments = Math.ceil(inputBytes.length / 24);
-        System.out.println("[CONSOLE] - MESSAGE LENGTH: "+inputBytes.length);
+        printByConsole("MESSAGE LENGTH: "+inputBytes.length);
         int fragments;
         if (inputBytes.length % 24 == 0) {
             fragments = inputBytes.length / 24;
@@ -184,8 +220,12 @@ public class MyProtocol {
             fragments = (inputBytes.length / 24) + 1;
         }
 
-        System.out.println("[CONSOLE] - NUMBER OF FRAGMENTS: " +fragments);
-        System.out.println("[CONSOLE] - PRESS ENTER TO CONTINUE");
+        printByConsole("NUMBER OF FRAGMENTS: " +fragments);
+        printByConsole("PRESS ENTER TO CONTINUE");
+
+
+        /*System.out.println("[CONSOLE] - NUMBER OF FRAGMENTS: " +fragments);
+        System.out.println("[CONSOLE] - PRESS ENTER TO CONTINUE");*/
         String a = sc.nextLine();
 
         for (int x = 0; x < fragments; x++) {
@@ -235,7 +275,6 @@ public class MyProtocol {
         }
 
         public void run() {
-            System.out.println("[CONSOLE] - ID: " + ID);
             while (true) {
 
                 try {
@@ -243,10 +282,12 @@ public class MyProtocol {
                     Message m = receivedQueue.take();
                     // look at header
                     if (m.getType() == MessageType.BUSY) { // The channel is busy (A node is sending within our detection range)
-                        System.out.println("[CONSOLE] - BUSY");
+                        printByConsole("BUSY");
+                        /*System.out.println("[CONSOLE] - BUSY");*/
                         // if channel is busy then we do not try to send at the time
                     } else if (m.getType() == MessageType.FREE) { // The channel is no longer busy (no nodes are sending within our detection range)
-                        System.out.println("[CONSOLE] - FREE");
+                        printByConsole("FREE");
+                        /*System.out.println("[CONSOLE] - FREE");*/
                         // if there is stuff to send then we can send now
                     } else if (m.getType() == MessageType.DATA) { // We received a data frame!
                         ByteBuffer temp = m.getData();
@@ -270,42 +311,22 @@ public class MyProtocol {
                         }
 
 
-                        System.out.println("You can reach these nodes: " + neighborNode.keySet());
-
+                        printByConsole("REACHABLE NODES" + neighborNode.keySet());
 
                         if ((m.getData().get(0)) == ID) {
 
                             continue;
 
                         } else {
-
-                            System.out.print("[CONSOLE] - DATA: ");
+                            /*System.out.print("[CONSOLE] - DATA: ");*/
 
                             if (fragmented == 1) {
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
-                                    /*
-                                    if (receivedMessages2.size() > 0) {
-                                        if (temp.get(4) == receivedMessages2.get(0).getData().get(4)) {
-                                            receivedMessages2.add(m);
-                                        }
-                                    } else {
-                                        receivedMessages2.add(m);
-                                    }
 
-                                     */
                                     receivedMessages2.add(m);
                                 } else {
-                                    /*
-                                    if (receivedMessages.size() > 0) {
-                                        if (temp.get(4) == receivedMessages.get(0).getData().get(4)) {
-                                            receivedMessages.add(m);
-                                        }
-                                    } else {
-                                        receivedMessages.add(m);
-                                    }
 
-                                     */
                                     receivedMessages.add(m);
 
                                 }
@@ -321,7 +342,6 @@ public class MyProtocol {
                                         }
                                     }
                                     if (complete) {
-
                                         for (Message x : receivedMessages) {
                                             if (x.getData().get(3) == 0 && x.getData().get(7) == 1) {
                                                 padding = x.getData().get(6);
@@ -343,9 +363,11 @@ public class MyProtocol {
                                             }
                                         }
                                         receivedMessages = new ArrayList<>();
-                                        System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
+
+                                        printByNode(m.getData().get(0), new String(data.array(), StandardCharsets.US_ASCII));
+                                        /*System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));*/
                                     } else {
-                                        System.out.println("A fragment packet has been lost along the way for RM1");
+                                        printByConsole("A fragment packet has been lost along the way for RM1");
                                     }
                                 }
 
@@ -383,9 +405,10 @@ public class MyProtocol {
                                             }
                                         }
                                         receivedMessages2 = new ArrayList<>();
-                                        System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
+                                        printByNode(m.getData().get(0), new String(data.array(), StandardCharsets.US_ASCII));
+                                        /*System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));*/
                                     } else {
-                                        System.out.println("A fragment packet has been lost along the way for RM2");
+                                        printByConsole("A FRAGMENT PACK HAS BEEN LOST ALONG THE WAY FOR RM2");
                                     }
                                 }
                             } else {
@@ -402,7 +425,7 @@ public class MyProtocol {
                                 if (m.getData().hasArray() && data != null) {
                                     string = new String(data, StandardCharsets.US_ASCII);
                                 }
-                                System.out.println(string);
+                                printByNode(m.getData().get(0), string);
                             }
 
 
@@ -435,19 +458,25 @@ public class MyProtocol {
                         // look at the header and if fragmented, rebuild packet and print, if not print data
 
                     } else if (m.getType() == MessageType.DATA_SHORT) { // We received a short data frame!
-                        System.out.print("[CONSOLE] - DATA SHORT: ");
+                        printByConsole("DATA SHORT: ");
+                        /*System.out.print("[CONSOLE] - DATA SHORT: ");*/
                         printByteBuffer(m.getData(), m.getData().capacity()); //Just print the data
                         // incoming data for data short will mostly be acks
                     } else if (m.getType() == MessageType.DONE_SENDING) { // This node is done sending
-                        System.out.println("x");
+                        printByConsole("SENDING ACCOMPLISHED");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
-                        System.out.println("[CONSOLE] - HELLO");
-                        System.out.println(ANSI_YELLOW+ "[CONSOLE] - ID: " + ID + ANSI_RESET);
-                        System.out.println(ANSI_YELLOW + "Type in something" + ANSI_RESET);
+
+                        printByConsole("HELLO");
+                        printByConsole("ID: " + ID);
+                        printByConsole("TYPE PLS: ");
+
+                        /*System.out.println(ANSI_YELLOW+ "[CONSOLE] - ID: " + ID + ANSI_RESET);
+                        System.out.println(ANSI_YELLOW+ "[CONSOLE] - Type" + ANSI_RESET);*/
                     } else if (m.getType() == MessageType.SENDING) { // This node is sending
-                        System.out.println("[CONSOLE] - SENDING");
+                        printByConsole("SENDING");
+
                     } else if (m.getType() == MessageType.END) { // Server / audio framework disconnect message. You don't have to handle this
-                        System.out.println("[CONSOLE] - END");
+                        printByConsole("FIN");
                         System.exit(0);
                     }
                 } catch (InterruptedException e) {
