@@ -256,12 +256,18 @@ public class MyProtocol {
 
                         // neighborNode.put(ID, 0);
                         if (temp.get(4) == 0) {
-                            neighborNode.put( (int) temp.get(0), 5);
+                            neighborNode.put( (int) temp.get(0), 6);
                         } else {
-                            neighborNode.put( (int) temp.get(4), 5);
+                            neighborNode.put( (int) temp.get(4), 6);
                         }
 
                         neighborNode.replaceAll((i, v) -> v - 1);
+
+                        for (Integer j : neighborNode.keySet()) {
+                            if (neighborNode.get(j) == 0) {
+                                neighborNode.remove(j);
+                            }
+                        }
 
 
                         System.out.println("You can reach these nodes: " + neighborNode.keySet());

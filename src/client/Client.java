@@ -25,8 +25,7 @@ public class Client {
 
     private Message[] sentMessages = new Message[5];
     private int packetsSent = 0;
-    private int[] neighborNodesIDS = new int[4];
-    private int neighborIDCounter = 0;
+
     private List<Message> fragments = new ArrayList<>();
     private List<Message> fragments2 = new ArrayList<>();
 
@@ -191,8 +190,7 @@ public class Client {
                     sentMessages[packetsSent % 5] = msg;
                     packetsSent++;
 
-                    neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
-                    neighborIDCounter++;
+
 
                     // TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
 
