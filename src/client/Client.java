@@ -135,6 +135,7 @@ public class Client {
 
         private void attemptToSendData(Message msg) {
             try {
+                Random rand = new Random();
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
                     System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
@@ -168,6 +169,8 @@ public class Client {
 
                     neighborNodesIDS[neighborIDCounter % 3] = msg.getData().get(4);
                     neighborIDCounter++;
+
+                    TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
 
                     sock.write(toSend);
                     TimeUnit.MILLISECONDS.sleep(500);

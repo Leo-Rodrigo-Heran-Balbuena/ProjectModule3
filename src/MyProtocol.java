@@ -82,7 +82,7 @@ public class MyProtocol {
         /* Initialization */
 
         Random rand = new Random();
-        this.ID = rand.nextInt(255);
+        this.ID = rand.nextInt(128);
 
         receivedQueue = new LinkedBlockingQueue<Message>();
         sendingQueue = new LinkedBlockingQueue<Message>();
@@ -101,7 +101,7 @@ public class MyProtocol {
 
             String input = "";
             while ((input = console.readLine()) != null) {
-                System.out.println("This is inputted " + input);
+               /* System.out.println("This is inputted " + input);*/
                 byte[] inputBytes = input.getBytes();
                 System.out.println(inputBytes);
                 Message msg;
@@ -137,7 +137,8 @@ public class MyProtocol {
         try {
             if (inputBytes.length <= 24) {
                 int necessaryPadding = 24 - inputBytes.length;
-                int messageID = new Random().nextInt(255);
+                int messageID = new Random().nextInt(128);
+                System.out.println("[CONSOLE] - ID CHOSEN FOR MESSAGE: " + messageID);
 
                 byte[] zeros = new byte[necessaryPadding];
                 byte[] result = mergeArrays(zeros, inputBytes);
@@ -308,7 +309,6 @@ public class MyProtocol {
 
                             }
 
-
                             for (int x = 0; x < previouslySentPacket.length; x++) {
                                 if (m.getData().get(0) == ID) {
                                     break;
@@ -324,7 +324,6 @@ public class MyProtocol {
                                     sendingQueue.put(toSend);
                                 }
                             }
-
 
                         }
 
