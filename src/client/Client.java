@@ -88,6 +88,15 @@ public class Client {
                     Message msg = sendingQueue.take();
                     System.out.println("[CONSOLE] - Something found");
                     Message state;
+                    if (msg.getData().get(0) != ID) {
+                        if (msg.getData().get(7) == 0 && msg.getData().get(3) == 1) {
+                            timer = rand.nextInt(500);
+                            TimeUnit.MILLISECONDS.sleep(timer + 200);
+                        } else if (msg.getData().get(3) == 1) {
+                            timer = rand.nextInt(500);
+                            TimeUnit.MILLISECONDS.sleep(timer + 200);
+                        }
+                    }
 
                     if (!receivedQueue.isEmpty()) {
                         if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
@@ -104,16 +113,16 @@ public class Client {
 
                         if (!fragmentWait) {
                             timer = rand.nextInt(2000);
-                            TimeUnit.MILLISECONDS.sleep(timer);
+                            TimeUnit.MILLISECONDS.sleep(700);
                             attemptToSendData(msg);
                         }
                     } else if (!fragmentWait){
                         timer = rand.nextInt(2000);
-                        TimeUnit.MILLISECONDS.sleep(timer);
+                        TimeUnit.MILLISECONDS.sleep(timer + 400);
                         attemptToSendData(msg);
                     } else {
                         timer = rand.nextInt(2000);
-                        TimeUnit.MILLISECONDS.sleep(timer);
+                        TimeUnit.MILLISECONDS.sleep(timer + 400);
                         sendingQueue.put(msg);
                     }
 
@@ -236,11 +245,15 @@ public class Client {
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
                                 if (temp.get(7) == 1) {
-                                    TimeUnit.MILLISECONDS.sleep(500);
+                                    System.out.println("[CONSOLE] - WAITING CUZ FRAGMENT");
+                                    TimeUnit.MILLISECONDS.sleep(200);
                                 }
                                 if (temp.get(3) == 0) {
-                                    TimeUnit.MILLISECONDS.sleep(500);
+                                    System.out.println("[CONSOLE] - WAITING CUZ LAST FRAGMENT");
+                                    TimeUnit.MILLISECONDS.sleep(1000);
                                 }
+                                System.out.println("[CONSOLE] - WAITING CUZ WHY NOT");
+                                TimeUnit.MILLISECONDS.sleep(200);
                                 receivedQueue.put( new Message(MessageType.DATA, temp) );
                             }                            
                             messageReceiving = false;

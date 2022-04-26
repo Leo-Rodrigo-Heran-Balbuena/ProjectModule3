@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is just some example code to show you how to interact
@@ -353,6 +354,9 @@ public class MyProtocol {
                                 dataInfo1.put(data);
                                 Message toSend = new Message(MessageType.DATA, dataInfo1);
                                 // toSend.getData().put((byte) ID);
+                                if (toSend.getData().get(7) == 1) {
+                                    TimeUnit.MILLISECONDS.sleep(500);
+                                }
                                 sendingQueue.put(toSend);
                             }
 
