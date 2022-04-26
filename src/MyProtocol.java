@@ -267,6 +267,7 @@ public class MyProtocol {
                                                 }
                                             }
                                         }
+                                        receivedMessages = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
                                         System.out.println("A fragment packet has been lost along the way for RM1");
@@ -279,10 +280,11 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages2.remove(x).getData());
+                                                    data.put(receivedMessages2.get(x).getData());
                                                 }
                                             }
                                         }
+                                        receivedMessages2 = new ArrayList<>();
                                         System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
                                         System.out.println("A fragment packet has been lost along the way for RM2");
@@ -306,17 +308,23 @@ public class MyProtocol {
 
                             }
 
+
                             for (int x = 0; x < previouslySentPacket.length; x++) {
                                 if (m.getData().get(0) == ID) {
                                     break;
                                 } else {
                                     // Changing the forwarder ID
                                     ByteBuffer dataInfo = m.getData();
-                                    dataInfo.putInt(4, ID);
-                                    Message toSend = new Message(MessageType.DATA, dataInfo);
+                                    byte[] data = dataInfo.array();
+                                    data[4] = (byte) ID;
+                                    ByteBuffer dataInfo1 = ByteBuffer.allocate(32);
+                                    dataInfo1.put(data);
+                                    Message toSend = new Message(MessageType.DATA, dataInfo1);
+                                    // toSend.getData().put((byte) ID);
                                     sendingQueue.put(toSend);
                                 }
                             }
+
 
                         }
 

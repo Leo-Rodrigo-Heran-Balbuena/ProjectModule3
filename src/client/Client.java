@@ -80,46 +80,31 @@ public class Client {
         }
 
         private void senderLoop(){
+            boolean fragmentWait = false;
             while(sock.isConnected()){
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
                     System.out.println("[CONSOLE] - Something found");
                     Message state;
-                    if (!receivedQueue.isEmpty() && (state = receivedQueue.take()).getType() != MessageType.FREE) {
-                        if (state.getType() == MessageType.DATA) {
-                            clogged = true;
-                            timer = rand.nextInt(200);
-                            while (clogged) {
-                                timer = timer -1;
-                                if (timer == 0) {
-                                    clogged = false;
-                                    //attemptToSendData(msg);
-                                    break;
+
+                    if (!receivedQueue.isEmpty() && !fragmentWait) {
+                        if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
+                            if (state.getData() != null) {
+                                if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
+                                    fragmentWait = true;
+                                } else {
+                                    fragmentWait = false;
                                 }
                             }
                         }
-
-                        // Message state = receivedQueue.take();
-                        if (state.getType() == MessageType.BUSY) {
-                            System.out.println("Busy. Await for new slot");
-                            clogged = true;
-                            timer = rand.nextInt(200);
-                            while (clogged) {
-                                timer = timer -1;
-                                if (timer == 0) {
-                                    clogged = false;
-                                    attemptToSendData(msg);
-                                    break;
-                                }
-                            }
-                        } else {
-                            int toSendChance = rand.nextInt(10);
-                            if (toSendChance < 8) {
-                                attemptToSendData(msg);
-                            }
+                        if (!fragmentWait) {
+                            attemptToSendData(msg);
                         }
                     } else {
+                        clogged = true;
+                        timer = rand.nextInt(200);
+                        TimeUnit.MILLISECONDS.sleep(timer);
                         attemptToSendData(msg);
                     }
 
