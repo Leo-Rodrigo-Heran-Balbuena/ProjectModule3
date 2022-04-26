@@ -33,6 +33,10 @@ public class MyProtocol {
     private List<Message> receivedMessages;
     private List<Message> receivedMessages2;
 
+    public static final String ANSI_YELLOW = "\u001B[33m";
+    public static final String ANSI_RESET = "\u001B[0m";
+    private HashMap<Integer,Integer> neighborNode;
+
     private int numberOfPacketsSent = 0;
 
     private int ID = 0;
@@ -86,6 +90,8 @@ public class MyProtocol {
         sendingQueue = new LinkedBlockingQueue<Message>();
         receivedMessages = new ArrayList<>();
         receivedMessages2 = new ArrayList<>();
+        neighborNode = new HashMap<>(4);
+
 
         new Client(SERVER_IP, SERVER_PORT, frequency, receivedQueue, sendingQueue, ID);
         new receiveThread(receivedQueue).start();
@@ -246,6 +252,12 @@ public class MyProtocol {
                         int fragmented = temp.get(7);
                         int moreFragments = temp.get(3);
 
+                        // neighborNode.put(ID, 0);
+                        neighborNode.put( (int) temp.get(4), 0);
+
+                        System.out.println("You can reach these nodes: " + neighborNode.keySet());
+
+
                         if ((m.getData().get(0)) == ID) {
                             continue;
 
@@ -257,9 +269,22 @@ public class MyProtocol {
 
                                 if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
                                         temp.get(0) != receivedMessages.get(0).getData().get(0)) {
-                                    receivedMessages2.add(m);
+                                    if (receivedMessages2.size() > 0) {
+                                        if (temp.get(4) == receivedMessages2.get(0).getData().get(4)) {
+                                            receivedMessages2.add(m);
+                                        }
+                                    } else {
+                                        receivedMessages.add(m);
+                                    }
                                 } else {
-                                    receivedMessages.add(m);
+                                    if (receivedMessages.size() > 0) {
+                                        if (temp.get(4) == receivedMessages.get(0).getData().get(4)) {
+                                            receivedMessages.add(m);
+                                        }
+                                    } else {
+                                        receivedMessages.add(m);
+                                    }
+                                    // receivedMessages.add(m);
                                 }
 
                             } else if (fragmented == 1 && moreFragments == 0) {
@@ -303,7 +328,7 @@ public class MyProtocol {
                                             }
                                         }
                                         receivedMessages = new ArrayList<>();
-                                        System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
+                                        System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
                                         receivedMessages = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM1");
@@ -325,7 +350,7 @@ public class MyProtocol {
                                             }
                                         }
                                         receivedMessages2 = new ArrayList<>();
-                                        System.out.println(new String(data.array(), StandardCharsets.US_ASCII));
+                                        System.out.println("Node " + m.getData().get(0) + ": " + new String(data.array(), StandardCharsets.US_ASCII));
                                     } else {
                                         receivedMessages2 = new ArrayList<>();
                                         System.out.println("A fragment packet has been lost along the way for RM2");
@@ -389,6 +414,8 @@ public class MyProtocol {
                         System.out.println("x");
                     } else if (m.getType() == MessageType.HELLO) { // Server / audio framework hello message. You don't have to handle this
                         System.out.println("[CONSOLE] - HELLO");
+                        System.out.println(ANSI_YELLOW+ "[CONSOLE] - ID: " + ID + ANSI_RESET);
+                        System.out.println(ANSI_YELLOW + "Type in something" + ANSI_RESET);
                     } else if (m.getType() == MessageType.SENDING) { // This node is sending
                         System.out.println("[CONSOLE] - SENDING");
                     } else if (m.getType() == MessageType.END) { // Server / audio framework disconnect message. You don't have to handle this
