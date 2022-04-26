@@ -26,7 +26,6 @@ public class Client {
     private int packetsSent = 0;
     private int[] neighborNodesIDS = new int[4];
     private int neighborIDCounter = 0;
-
     private List<Message> fragments = new ArrayList<>();
     private List<Message> fragments2 = new ArrayList<>();
 
@@ -77,7 +76,7 @@ public class Client {
         public Sender(SocketChannel sock, BlockingQueue<Message> sendingQueue){
             super();
             this.sendingQueue = sendingQueue;
-            this.sock = sock;
+            this.sock = sock;      
         }
 
         private void senderLoop(){
@@ -86,6 +85,7 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
+                    System.out.println("[CONSOLE] - Something found");
                     Message state;
 
                     if (!receivedQueue.isEmpty()) {
@@ -288,7 +288,6 @@ public class Client {
         }
 
         public void receivingLoop(){
-            Random rand = new Random();
             int bytesRead = 0;
             ByteBuffer recv = ByteBuffer.allocate(1024);
             try{
