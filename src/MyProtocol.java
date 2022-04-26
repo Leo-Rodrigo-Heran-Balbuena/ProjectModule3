@@ -309,20 +309,25 @@ public class MyProtocol {
 
                             }
 
+                            boolean ourPacket = false;
+
                             for (int x = 0; x < previouslySentPacket.length; x++) {
                                 if (m.getData().get(0) == ID) {
+                                    ourPacket = true;
                                     break;
-                                } else {
-                                    // Changing the forwarder ID
-                                    ByteBuffer dataInfo = m.getData();
-                                    byte[] data = dataInfo.array();
-                                    data[4] = (byte) ID;
-                                    ByteBuffer dataInfo1 = ByteBuffer.allocate(32);
-                                    dataInfo1.put(data);
-                                    Message toSend = new Message(MessageType.DATA, dataInfo1);
-                                    // toSend.getData().put((byte) ID);
-                                    sendingQueue.put(toSend);
                                 }
+                            }
+
+                            if (!ourPacket) {
+                                // Changing the forwarder ID
+                                ByteBuffer dataInfo = m.getData();
+                                byte[] data = dataInfo.array();
+                                data[4] = (byte) ID;
+                                ByteBuffer dataInfo1 = ByteBuffer.allocate(32);
+                                dataInfo1.put(data);
+                                Message toSend = new Message(MessageType.DATA, dataInfo1);
+                                // toSend.getData().put((byte) ID);
+                                sendingQueue.put(toSend);
                             }
 
                         }

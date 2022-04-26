@@ -100,11 +100,12 @@ public class Client {
                             }
                         }
                         if (!fragmentWait) {
+                            timer = rand.nextInt(2000);
+                            TimeUnit.MILLISECONDS.sleep(timer);
                             attemptToSendData(msg);
                         }
                     } else {
-                        clogged = true;
-                        timer = rand.nextInt(200);
+                        timer = rand.nextInt(2000);
                         TimeUnit.MILLISECONDS.sleep(timer);
                         attemptToSendData(msg);
                     }
@@ -122,7 +123,7 @@ public class Client {
             buff.put((byte) ((frequency >> 8)&0xff));
             buff.put((byte) (frequency&0xff));
             buff.position(0);
-            try{
+            try {
                 sock.write(buff);
             } catch(IOException e) {
                 System.err.println("Failed to send HELLO" );
