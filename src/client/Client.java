@@ -1,5 +1,6 @@
 package client;
 
+import javax.sound.midi.SysexMessage;
 import java.nio.channels.SocketChannel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -234,6 +235,12 @@ public class Client {
                             if( shortData ){
                                 receivedQueue.put( new Message(MessageType.DATA_SHORT, temp) );
                             } else {
+                                if (temp.get(7) == 1) {
+                                    TimeUnit.MILLISECONDS.sleep(500);
+                                }
+                                if (temp.get(3) == 0) {
+                                    TimeUnit.MILLISECONDS.sleep(500);
+                                }
                                 receivedQueue.put( new Message(MessageType.DATA, temp) );
                             }                            
                             messageReceiving = false;
@@ -284,6 +291,7 @@ public class Client {
         }
 
         public void receivingLoop(){
+            Random rand = new Random();
             int bytesRead = 0;
             ByteBuffer recv = ByteBuffer.allocate(1024);
             try{
@@ -297,7 +305,7 @@ public class Client {
                             break;
                         }
 
-                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000)+ 500);
                         parseMessage(recv,bytesRead);
                         TimeUnit.SECONDS.sleep(1);
                     } else {
