@@ -263,17 +263,25 @@ public class MyProtocol {
 
                             } else if (fragmented == 1 && moreFragments == 0) {
 
+                                if (receivedMessages.size() > 0 && receivedMessages.get(0) != null &&
+                                        temp.get(0) != receivedMessages.get(0).getData().get(0)) {
+                                    receivedMessages2.add(m);
+                                } else {
+                                    receivedMessages.add(m);
+                                }
+
                                 if (receivedMessages.size() > 0 && temp.get(0) == receivedMessages.get(0).getData().get(0)) {
                                     int size = receivedMessages.size();
 
-                                    if (temp.get(1) == size - 1) {
-                                        int space = ((size - 1) * 24) + (24 - padding);
+                                    if (temp.get(1) == size) {
+                                        // int space = ((size - 1) * 24) + (24 - padding);
+                                        int space = size * 24;
                                         ByteBuffer data = ByteBuffer.allocate(space);
 
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages.get(x).getData());
+                                                    data.put(Arrays.copyOfRange(receivedMessages.get(x).getData().array(), 8, 32));
                                                 }
                                             }
                                         }
@@ -290,7 +298,7 @@ public class MyProtocol {
                                         for (int i = 1; i <= size; i++) {
                                             for (int x = 0; x < size; x++) {
                                                 if (receivedMessages2.get(x).getData().get(1) == i) {
-                                                    data.put(receivedMessages2.get(x).getData());
+                                                    data.put(Arrays.copyOfRange(receivedMessages2.get(x).getData().array(), 8, 32));
                                                 }
                                             }
                                         }
@@ -336,7 +344,7 @@ public class MyProtocol {
                                 dataInfo1.put(data);
                                 Message toSend = new Message(MessageType.DATA, dataInfo1);
                                 // toSend.getData().put((byte) ID);
-                                sendingQueue.put(toSend);
+                                // sendingQueue.put(toSend);
                             }
 
                         }
