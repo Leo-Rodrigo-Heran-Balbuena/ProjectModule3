@@ -5,10 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -103,12 +100,10 @@ public class MyProtocol {
             while ((input = console.readLine()) != null) {
                /* System.out.println("This is inputted " + input);*/
                 byte[] inputBytes = input.getBytes();
-                System.out.println(inputBytes);
                 Message msg;
                 if ((inputBytes.length) > 2) {
                     generateMessage(inputBytes);
                 } else {
-                    System.out.println("Checkpoint 3A");
                     ByteBuffer toSend = ByteBuffer.allocate(2); // match the form of DATA-SHORT
                     //TODO: Check ack
                     msg = new Message(MessageType.DATA_SHORT, toSend);
@@ -117,7 +112,6 @@ public class MyProtocol {
                 }
                 //sendingQueue.put(msg);
             }
-            System.out.println("While is not read");
         } catch (InterruptedException e) {
             System.exit(2);
         } catch (IOException e) {
@@ -173,13 +167,19 @@ public class MyProtocol {
 
     private void generateFragmentedMessage(byte[] inputBytes){
 
+        Scanner sc = new Scanner(System.in);
         // double fragments = Math.ceil(inputBytes.length / 24);
+        System.out.println("[CONSOLE] - MESSAGE LENGTH: "+inputBytes.length);
         int fragments;
         if (inputBytes.length % 24 == 0) {
             fragments = inputBytes.length / 24;
         } else {
             fragments = (inputBytes.length / 24) + 1;
         }
+
+        System.out.println("[CONSOLE] - NUMBER OF FRAGMENTS: " +fragments);
+        System.out.println("[CONSOLE] - PRESS ENTER TO CONTINUE");
+        String a = sc.nextLine();
 
         for (int x = 0; x < fragments; x++) {
 

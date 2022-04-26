@@ -26,6 +26,7 @@ public class Client {
     private int packetsSent = 0;
     private int[] neighborNodesIDS = new int[4];
     private int neighborIDCounter = 0;
+
     private List<Message> fragments = new ArrayList<>();
     private List<Message> fragments2 = new ArrayList<>();
 
@@ -76,7 +77,7 @@ public class Client {
         public Sender(SocketChannel sock, BlockingQueue<Message> sendingQueue){
             super();
             this.sendingQueue = sendingQueue;
-            this.sock = sock;      
+            this.sock = sock;
         }
 
         private void senderLoop(){
@@ -85,28 +86,37 @@ public class Client {
                 Random rand = new Random();
                 try{
                     Message msg = sendingQueue.take();
-                    System.out.println("[CONSOLE] - Something found");
                     Message state;
 
-                    if (!receivedQueue.isEmpty() && !fragmentWait) {
+                    if (!receivedQueue.isEmpty()) {
                         if ((state = receivedQueue.take()).getType() == MessageType.DATA) {
-                            if (state.getData() != null) {
-                                if (state.getData().get(3) == 1 && state.getData().get(7) == 1) {
-                                    fragmentWait = true;
-                                    sendingQueue.put(msg);
+                            if (msg.getData().get(0) == ID) {
+                                attemptToSendData(msg);
+                            } else {
+                                if (msg.getData().get(7) == 1) {
+                                    if (msg.getData().get(3) == 1) {
+                                        while ((msg = sendingQueue.take()).getData().get(3) == 0) {
+                                            fragments.add(msg);
+                                        }
+                                        for (int x = 0; x < fragments.size(); x++) {
+                                            TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                                            attemptToSendData(msg);
+                                        }
+                                    } else {
+                                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                                        attemptToSendData(msg);
+                                    }
                                 } else {
-                                    fragmentWait = false;
+                                    TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
+                                    attemptToSendData(msg);
                                 }
                             }
-                        }
-                        if (!fragmentWait) {
-                            timer = rand.nextInt(2000);
-                            TimeUnit.MILLISECONDS.sleep(timer);
+                        } else {
+                            TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
                             attemptToSendData(msg);
                         }
                     } else {
-                        timer = rand.nextInt(2000);
-                        TimeUnit.MILLISECONDS.sleep(timer);
+                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
                         attemptToSendData(msg);
                     }
 
@@ -139,7 +149,7 @@ public class Client {
                 Random rand = new Random();
                 if (msg.getType() == MessageType.DATA || msg.getType() == MessageType.DATA_SHORT ) {
 
-                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7));
+                    System.out.println("[CONSOLE] - MESSAGE ID: " + msg.getData().get(2) + " MESSAGE FID: " + msg.getData().get(4) + " MESSAGE SENDER: " + msg.getData().get(0) + " FRAGMENT FLAG: " + msg.getData().get(7) + " LASTFRAG FLAG: " + msg.getData().get(3) );
 
 
                     for (int x = 0; x < sentMessages.length; x++) {
@@ -278,6 +288,7 @@ public class Client {
         }
 
         public void receivingLoop(){
+            Random rand = new Random();
             int bytesRead = 0;
             ByteBuffer recv = ByteBuffer.allocate(1024);
             try{
@@ -289,14 +300,9 @@ public class Client {
                         int senderID = ((int) byteArray[0]);
                         if (senderID == ID) {
                             break;
-                        } /*else {
-                            if ( Integer.parseInt((Integer.toString(bytesRead))) > 32) {
-                                System.out.println("[CONSOLE] - Received "+ 32  +" bytes!");
-                            } else {
-                                System.out.println("[CONSOLE] - Received "+ Integer.parseInt((Integer.toString(bytesRead))) +" bytes!");
-                            }
+                        }
 
-                        }*/
+                        TimeUnit.MILLISECONDS.sleep(rand.nextInt(1000));
                         parseMessage(recv,bytesRead);
                         TimeUnit.SECONDS.sleep(1);
                     } else {
